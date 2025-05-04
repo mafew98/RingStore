@@ -1,0 +1,5 @@
+*.log
+*DS_STORE
+testlogs/
+*.tar
+*.pdf
