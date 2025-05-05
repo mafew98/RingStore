@@ -164,6 +164,7 @@ public class ConnectionContext {
      * @throws IOException
      */
     public static void readSystemProperties() throws FileNotFoundException, IOException {
+        
         Properties readProps = new Properties();
         String rootPath = "./";
         String sysConfigPath = rootPath + "sysNodes.properties";
@@ -178,6 +179,8 @@ public class ConnectionContext {
             nodeIPMapping.put(InetAddress.getByName(key), Integer.parseInt(readProps.getProperty(key)));
         }
         System.out.println(nodeIPMapping);
+        
+        
     }
 
     /**
@@ -238,7 +241,7 @@ public class ConnectionContext {
     * SEQUENCER ATTRIBUTES
     */
 
-    private int sequencerID;
+    private int sequencerID=1;
     private ConcurrentLinkedQueue<String> sequencedBroadcastQueue = new ConcurrentLinkedQueue<>();  // Using raw Sequenced Messages here
     private SequencerQueue sequencerQueue;
     

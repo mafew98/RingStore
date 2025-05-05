@@ -31,8 +31,6 @@ public class comDriver {
 
         // Creates the communication context and invokes channel setup
         ConnectionContext connectionContext = new ConnectionContext();
-        System.out.println("I am Node ID: " + currentNodeId);
-        System.out.println("Sequencer is Node ID: " + connectionContext.getSequencerID());
         ChannelManager ChannelManager = new ChannelManager(connectionContext);
         ChannelManager.initializeChannels();
 
