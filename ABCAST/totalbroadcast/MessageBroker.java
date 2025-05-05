@@ -13,8 +13,8 @@ public class MessageBroker {
 
     private HashMap<Integer, Socket> connectionHash;
     protected PriorityBlockingQueue<Message> messageQueue; // Shared message queue
-    private final int MAX_PROCESSES = 5;
-    private final int MAX_PROCESSES_MESSAGES = 100;
+    private final int MAX_PROCESSES = 6;
+    private final int MAX_PROCESSES_MESSAGES = 2;
     private ConnectionContext connectionContext;
     private ArrayList<Thread> receiverThreads = new ArrayList<>();
     private Thread broadcasterThread;

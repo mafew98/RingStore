@@ -13,8 +13,8 @@ public class MessageBroadcaster implements Runnable {
     private ConnectionContext connectionContext;
     private HashMap<Integer, PrintWriter> outputStreams; // Hash between nodeID and the output socket stream
     private final int currentNodeId;
-    private final int MAX_NEW_MESSAGES = 100; // Sets the maximum messages expected.
-    private final int MAX_SEQUENCED_MESSAGES = 500;
+    private final int MAX_NEW_MESSAGES = 2; // Sets the maximum messages expected.
+    private final int MAX_SEQUENCED_MESSAGES = 10;
     private int sentSequencedMessageCount = 0;
     private int broadcastCount = 0;
     private final Random random = new Random();
@@ -86,21 +86,23 @@ public class MessageBroadcaster implements Runnable {
         while (connectionContext.peekSequencedBroadcastQueue() != null) {
             String timestamp = sdf.format(new Date());
             String rawMessageString = connectionContext.pollSequencedBroadcastQueue();
-            for (int processId = 1; processId <= connectionContext.getMaxProcesses(); processId++) {
-                // Since sequencer only needs to broadcast to others.
-                if (processId != currentNodeId) {
-                    try {
-                        timestamp = sdf.format(new Date());
-                        System.out.println(
-                                String.format("[%s]Broadcasting Sequencer Message to [%d]", timestamp, processId));
-                        outputStreams.get(processId).println(rawMessageString); // Using the printwriter object to write
-                                                                                // to the
-                        // outputstream
-                    } catch (Exception e) {
-                        System.err.println("Failed to send message to process " + processId);
-                    }
+            // Send to server node only (Node 6)
+            int serverNodeId = 6; // Node 6 = dc07
+            PrintWriter serverWriter = outputStreams.get(serverNodeId);
+            if (serverWriter != null) {
+                try {
+                    timestamp = sdf.format(new Date());
+                    System.out.println(String.format("[%s]Sending Sequenced Message to Server Node [%d]: %s", timestamp, serverNodeId, rawMessageString));
+                    serverWriter.println(rawMessageString);
+                    serverWriter.flush();  // Ensure it's pushed
+                } catch (Exception e) {
+                    System.err.println(" Failed to send message to Server Node " + serverNodeId);
+                    e.printStackTrace();
                 }
+            } else {
+                System.err.println("No output stream found for Server Node " + serverNodeId);
             }
+
             sentSequencedMessageCount++;
         }
     }
@@ -120,7 +122,9 @@ public class MessageBroadcaster implements Runnable {
             String rawMessageString = Message.createRawMessage(messageContent, vectorClock);
             String timestamp = sdf.format(new Date());
             System.out.println(String.format("[%s]Broadcasting: " + rawMessageString, timestamp));
-            for (int processId = 1; processId <= connectionContext.getMaxProcesses(); processId++) {
+            //for (int processId = 1; processId <= connectionContext.getMaxProcesses(); processId++) {
+            for (int processId : outputStreams.keySet()) {
+
                 if (processId != currentNodeId) {
                     try {
                         timestamp = sdf.format(new Date());

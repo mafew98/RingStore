@@ -22,7 +22,7 @@ public class ConnectionContext {
     private HashMap<Integer, PrintWriter> outputWriterHash = new HashMap<>();
     private ServerSocket serverSocket;
     private static int port = 24942; // Communication port for the whole system
-    private int MAX_PROCESSES = 5;
+    private int MAX_PROCESSES = 6;
 
     
     /** 

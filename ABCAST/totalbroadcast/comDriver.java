@@ -14,10 +14,25 @@ public class comDriver {
     public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
         // Loads system properties
         ConnectionContext.readSystemProperties();
-        ConnectionContext.getCurrentNodeID();
+        Integer currentNodeId = ConnectionContext.getCurrentNodeID();
+        
+        
+
+
+        // If this is the server node (Node 6), run ServerListener
+        if (currentNodeId == 6) {
+            System.out.println("This is the Server node (Node 6). Launching ServerListener...");
+            ServerListener.main(args);
+            return;
+        }
+
+        // Else: this is a client node (Node 1 to 5)
+        System.out.println("This is a Client node (Node " + currentNodeId + "). Launching Total Order Broadcast...");
 
         // Creates the communication context and invokes channel setup
         ConnectionContext connectionContext = new ConnectionContext();
+        System.out.println("I am Node ID: " + currentNodeId);
+        System.out.println("Sequencer is Node ID: " + connectionContext.getSequencerID());
         ChannelManager ChannelManager = new ChannelManager(connectionContext);
         ChannelManager.initializeChannels();
 

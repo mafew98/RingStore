@@ -40,7 +40,10 @@ public class ChannelManager {
     public void initializeChannels() throws IOException, NumberFormatException {
         // Initiate Connection Channels
         startServer();
-
+        if (NodeId == 6) {
+            acceptServerConnectionOnly();  // new method
+            return;  // skip rest
+        }
         connectToHigherIdNodes();
         acceptConnectionsFromLowerIdNodes();
 
@@ -51,6 +54,24 @@ public class ChannelManager {
         waitForReadySignals();
         System.out.println("Node " + NodeId + " is now ready to start broadcasting messages.");
         System.out.println("================================================");
+    }
+
+    private void acceptServerConnectionOnly() throws IOException {
+        System.out.println("Node 6: Waiting for connection from sequencer only...");
+        Socket inSocket = serverSocket.accept();
+        inSocket.setKeepAlive(true);
+    
+        InetAddress remoteSocketIP = inSocket.getInetAddress();
+        int requestorNodeId = systemMapping.get(remoteSocketIP);
+        connectionHash.put(requestorNodeId, inSocket);
+    
+        PrintWriter printWriter = new PrintWriter(inSocket.getOutputStream(), true);
+        BufferedReader inputReader = new BufferedReader(new InputStreamReader(inSocket.getInputStream()), 65536);
+    
+        connectionContext.addOutputWriter(requestorNodeId, printWriter);
+        connectionContext.addInputReader(requestorNodeId, inputReader);
+    
+        System.out.println("Node 6: Accepted connection from Sequencer Node " + requestorNodeId);
     }
 
     /**
@@ -70,9 +91,21 @@ public class ChannelManager {
      */
     private void connectToHigherIdNodes() throws IOException {
         for (InetAddress nodeAddress : systemMapping.keySet()) {
+            
+            if (systemMapping.get(nodeAddress) == 6) {
+                continue;
+            }
+
             if (systemMapping.get(nodeAddress) > NodeId) {
                 connectToNode(nodeAddress);
             }
+        }
+
+        // If this node is the sequencer, also connect to the server node (Node 6)
+        if (NodeId == connectionContext.getSequencerID()) {
+            InetAddress serverAddress = InetAddress.getByName("10.176.69.38"); // dc07 IP
+            connectToNode(serverAddress);
+            System.out.println("Sequencer node " + NodeId + " connected to Server (Node 6)");
         }
     }
 
@@ -100,7 +133,7 @@ public class ChannelManager {
                         + attempts + " of " + MAX_RETRIES);
                 if (attempts < MAX_RETRIES) {
                     try {
-                        Thread.sleep(1000); // Wait 1 second before retrying
+                        Thread.sleep(10000); // Wait 1 second before retrying
                     } catch (InterruptedException ie) {
                         ie.printStackTrace();
                     }
