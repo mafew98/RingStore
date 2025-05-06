@@ -101,12 +101,12 @@ public class ChannelManager {
             }
         }
 
-        // If this node is the sequencer, also connect to the server node (Node 6)
-        if (NodeId == connectionContext.getSequencerID()) {
-            InetAddress serverAddress = InetAddress.getByName("10.176.69.38"); // dc07 IP
-            connectToNode(serverAddress);
-            System.out.println("Sequencer node " + NodeId + " connected to Server (Node 6)");
-        }
+        // // If this node is the sequencer, also connect to the server node (Node 6)
+        // if (NodeId == connectionContext.getSequencerID()) {
+        //     InetAddress serverAddress = InetAddress.getByName("10.176.69.38"); // dc07 IP
+        //     connectToNode(serverAddress);
+        //     System.out.println("Sequencer node " + NodeId + " connected to Server (Node 6)");
+        // }
     }
 
     /**

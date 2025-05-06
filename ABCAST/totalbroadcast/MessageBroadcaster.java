@@ -13,8 +13,8 @@ public class MessageBroadcaster implements Runnable {
     private ConnectionContext connectionContext;
     private HashMap<Integer, PrintWriter> outputStreams; // Hash between nodeID and the output socket stream
     private final int currentNodeId;
-    private final int MAX_NEW_MESSAGES = 2; // Sets the maximum messages expected.
-    private final int MAX_SEQUENCED_MESSAGES = 10;
+    private final int MAX_NEW_MESSAGES = 100; // Sets the maximum messages expected.
+    private final int MAX_SEQUENCED_MESSAGES = 500;
     private int sentSequencedMessageCount = 0;
     private int broadcastCount = 0;
     private final Random random = new Random();

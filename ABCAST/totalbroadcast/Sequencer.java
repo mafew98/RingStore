@@ -8,7 +8,7 @@ public class Sequencer implements Runnable {
     private SequencerQueue sequencerQueue;
     private VectorClock vectorClock;
     private int DELIVERY_COUNT = 0;
-    private final int TOTAL_MESSAGES = 10;
+    private final int TOTAL_MESSAGES = 500;
 
     public Sequencer(boolean isSequencer, ConnectionContext connectionContext) {
         // First time initialization
