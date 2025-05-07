@@ -266,25 +266,25 @@ public class ConnectionContext {
      * Marks sequenced messages as "to be broadcast"
      * @param rawSequencedMessage
      */
-    public void addToSequencedBroadcastQueue(String rawSequencedMessage) {
-        this.sequencedBroadcastQueue.add(rawSequencedMessage);
-    }
+    // public void addToSequencedBroadcastQueue(String rawSequencedMessage) {
+    //     this.sequencedBroadcastQueue.add(rawSequencedMessage);
+    // }
 
     /**
      * Method to peek at the Sequenced Broadcast Queue
      * @return
      */
-    public String peekSequencedBroadcastQueue() {
-        return this.sequencedBroadcastQueue.peek();
-    }
+    // public String peekSequencedBroadcastQueue() {
+    //     return this.sequencedBroadcastQueue.peek();
+    // }
 
     /**
      * Polls the Sequenced Broadcast Queue
      * @return
      */
-    public String pollSequencedBroadcastQueue() {
-        return this.sequencedBroadcastQueue.poll();
-    }
+    // public String pollSequencedBroadcastQueue() {
+    //     return this.sequencedBroadcastQueue.poll();
+    // }
 
     /**
      * Stores the sequencer queue object

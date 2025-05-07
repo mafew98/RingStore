@@ -49,26 +49,6 @@ public class MessageBroker {
                 isSequencerNode = true;
                 System.out.println("I am the Sequencer.");
 
-                try {
-                    String serverIP = "10.176.69.38"; // dc07 IP or change as needed
-                    int serverNodeId = 6;
-                    int port = connectionContext.getPort();
-
-                    Socket serverSocket = new Socket(serverIP, port);
-                    serverSocket.setKeepAlive(true);
-
-                    PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
-                    BufferedReader serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()), 65536);
-
-                    connectionContext.getConnectionHash().put(serverNodeId, serverSocket);
-                    connectionContext.addOutputWriter(serverNodeId, serverWriter);
-                    connectionContext.addInputReader(serverNodeId, serverReader);
-
-                    System.out.println("Sequencer connected to Server (Node 6) at " + serverIP);
-                } catch (IOException e) {
-                    System.err.println("Sequencer failed to connect to Server (Node 6)");
-                    e.printStackTrace();
-                }
             }
         } catch (java.net.UnknownHostException e) {
             e.printStackTrace();

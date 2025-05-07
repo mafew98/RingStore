@@ -1,5 +1,7 @@
 package Client;
 
+import java.io.PrintWriter;
+
 public class Sequencer implements Runnable {
     public boolean isSequencer = false; // Sequencer Token
     public int sequenceNo;
@@ -49,9 +51,17 @@ public class Sequencer implements Runnable {
             deliverMessage(topMessage);
             // sequence the message and put in Broadcast Queue
             sequenceNo += 1;
-            connectionContext
-                    .addToSequencedBroadcastQueue(SequencedMessage.createSequencedRawMessage(topMessage, sequenceNo));
-            ;
+            // connectionContext
+            //         .addToSequencedBroadcastQueue(SequencedMessage.createSequencedRawMessage(topMessage, sequenceNo));
+            // ;
+            String sequencedMsg = SequencedMessage.createSequencedRawMessage(topMessage, sequenceNo);
+            PrintWriter backToClient = connectionContext.getOutputWriterHash().get(topMessage.getNodeId());
+            if (backToClient != null) {
+                backToClient.println(sequencedMsg);
+                backToClient.flush();
+                System.out.println("Sent sequenced message back to Node " + topMessage.getNodeId());
+            }
+
         }
     }
 

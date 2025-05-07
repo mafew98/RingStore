@@ -2,6 +2,8 @@ package Client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.Date;
 
 import java.text.SimpleDateFormat;
@@ -61,16 +63,31 @@ public class MessageReceiver extends Thread {
     private void processAllMessages() throws IOException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         String rawMessageContent;
-        while (sequencedMessageCount < TOTAL_SEQUENCE_MESSAGES && (rawMessageContent = reader.readLine()) != null) {
-            // debug
+        while ((rawMessageContent = reader.readLine()) != null) {
             String timestamp = sdf.format(new Date());
             System.out.println(String.format("[%s]Message received: {%s}", timestamp, rawMessageContent));
+
             if (SequencedMessage.isSequencedMessage(rawMessageContent)) {
-                sequencerQueue.addMessageToQueue(new SequencedMessage(rawMessageContent));
-                sequencedMessageCount++;
+                System.out.println("Received sequenced message: " + rawMessageContent);
+                try {
+                    String serverIP = "10.176.69.38";  // Replace with actual server IP if needed
+                    int port = connectionContext.getPort();
+
+                    Socket serverSocket = new Socket(serverIP, port);
+                    PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
+
+                    serverWriter.println(rawMessageContent);
+                    serverWriter.flush();
+                    System.out.println("Forwarded sequenced message to Server.");
+
+                    serverSocket.close();
+                } catch (IOException e) {
+                    System.err.println("Error sending to server.");
+                    e.printStackTrace();
+                }
             } else {
-                // Not a sequenced message. Simply adding to the priority queue
                 processAppMessages(rawMessageContent);
+                messageCount++;
             }
         }
     }
