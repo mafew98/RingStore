@@ -48,12 +48,32 @@ public void run() {
             System.out.print("Enter message to send (or type 'exit'): ");
             String input = console.readLine();
             if (input.equalsIgnoreCase("exit")) break;
+            
+            String[] parts = input.split(":", 3);
+            Message.MessageType type;
+            Integer targetServer = null;
+            try {
+                type = Message.MessageType.valueOf(parts[0].toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid message type. Use READ or WRITE.");
+                continue;
+            }
 
+            if (!parts[1].isEmpty()) {
+                try {
+                    targetServer = Integer.parseInt(parts[1]);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid server ID.");
+                    continue;
+                }
+            }
+
+            String content = parts[2];
             synchronized (vectorClock) {
                 vectorClock.increment(currentNodeId);
             }
 
-            String rawMessage = Message.createRawMessage(input, vectorClock);
+            String rawMessage = Message.createRawMessage(content, vectorClock, type, targetServer);
             PrintWriter sequencerWriter = outputStreams.get(connectionContext.getSequencerID());
 
             if (sequencerWriter != null) {

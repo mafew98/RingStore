@@ -1,9 +1,15 @@
 package Client;
 
 public class Message {
+    public enum MessageType {
+        READ,
+        WRITE
+    }
     private String messageContent;
     private VectorClock messageClock;
     private Integer NodeId;
+    private MessageType type;
+    private Integer targetServer;
 
     /**
      * Message Constructor to handle raw messages.
@@ -13,9 +19,11 @@ public class Message {
      * @param NodeId
      */
     public Message(String rawMessage, Integer NodeId) {
-        String[] messageParts = rawMessage.split(":", 2);
+        String[] messageParts = rawMessage.split(":", 4);
         this.messageClock = new VectorClock(messageParts[0]);
-        this.messageContent = messageParts[1];
+        this.type = MessageType.valueOf(messageParts[1]);
+        this.targetServer = (messageParts[2] == null || messageParts[2].isEmpty()) ? null : Integer.parseInt(messageParts[2]);
+        this.messageContent = messageParts[3];
         this.NodeId = NodeId;
     }
 
@@ -27,9 +35,11 @@ public class Message {
      * @param NodeId
      */
     public Message(String rawMessage) throws NumberFormatException {
-        String[] messageParts = rawMessage.split(":", 2);
+        String[] messageParts = rawMessage.split(":", 4);
         this.messageClock = new VectorClock(messageParts[0]);
-        this.messageContent = messageParts[1];
+        this.type = MessageType.valueOf(messageParts[1]);
+        this.targetServer = (messageParts[2] == null || messageParts[2].isEmpty()) ? null : Integer.parseInt(messageParts[2]);
+        this.messageContent = messageParts[3];
         int index = messageContent.indexOf("from Node ");
         if (index != -1) {
             this.NodeId = Integer.parseInt(messageContent.substring(index + 10).trim()); // Extract Z
@@ -43,12 +53,15 @@ public class Message {
      * @param messageClock
      * @param NodeId
      */
-    public Message(String messageContent, VectorClock messageClock, int NodeId) {
+    public Message(String messageContent, VectorClock messageClock, int NodeId, MessageType type, Integer targetServer) {
         this.messageContent = messageContent;
         this.messageClock = messageClock;
         this.NodeId = NodeId;
+        this.type = type;
+        this.targetServer = targetServer;
     }
 
+    
     /**
      * Getting message content
      * 
@@ -76,6 +89,13 @@ public class Message {
         return this.NodeId;
     }
 
+    public MessageType getType() {
+        return this.type;
+    }
+
+    public Integer getTargetServer() {
+        return this.targetServer;
+    }
     /**
      * Static method to create a raw message.
      * 
@@ -83,7 +103,14 @@ public class Message {
      * @param messageClock
      * @return
      */
-    public static String createRawMessage(String messageContent, VectorClock messageClock) {
-        return (messageClock.toString() + ":" + messageContent);
+    public static String createRawMessage(String messageContent, VectorClock messageClock, MessageType type, Integer targetServer) {
+        String target = (targetServer == null) ? "" : targetServer.toString();
+        return messageClock.toString() + ":" + type.name() + ":" + target + ":" + messageContent;
     }
+
+    // Backward compatibility for existing code
+public static String createRawMessage(String messageContent, VectorClock messageClock) {
+    return createRawMessage(messageContent, messageClock, MessageType.WRITE, null); // Default to WRITE with no target
+}
+
 }

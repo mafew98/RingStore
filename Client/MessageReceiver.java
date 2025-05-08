@@ -20,6 +20,10 @@ public class MessageReceiver extends Thread {
     private MessageQueue messageQueue;
     private ConnectionContext connectionContext;
 
+    private int hashToServer(String key) {
+        return 1 + Math.abs(key.hashCode()) % 2; // returns 1 or 2
+    }
+
     /**
      * Constructor method
      * 
@@ -63,34 +67,42 @@ public class MessageReceiver extends Thread {
     private void processAllMessages() throws IOException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         String rawMessageContent;
+    
         while ((rawMessageContent = reader.readLine()) != null) {
             String timestamp = sdf.format(new Date());
             System.out.println(String.format("[%s]Message received: {%s}", timestamp, rawMessageContent));
-
-            if (SequencedMessage.isSequencedMessage(rawMessageContent)) {
-                System.out.println("Received sequenced message: " + rawMessageContent);
-                try {
-                    String serverIP = "10.176.69.38";  // Replace with actual server IP if needed
-                    int port = connectionContext.getPort();
-
-                    Socket serverSocket = new Socket(serverIP, port);
-                    PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
-
-                    serverWriter.println(rawMessageContent);
-                    serverWriter.flush();
-                    System.out.println("Forwarded sequenced message to Server.");
-
-                    serverSocket.close();
-                } catch (IOException e) {
-                    System.err.println("Error sending to server.");
-                    e.printStackTrace();
-                }
+    
+            // Parse the sequenced message
+            SequencedMessage sm = new SequencedMessage(rawMessageContent);
+            Message message = sm.getSequencedMessage();
+    
+            String serverIP;
+            int port = connectionContext.getPort();
+    
+            if (message.getType() == Message.MessageType.READ) {
+                int serverId = (message.getTargetServer() != null)
+                        ? message.getTargetServer()
+                        : hashToServer(message.getMessageContent());
+                serverIP = (serverId == 1) ? "10.176.69.38" : "10.176.69.39";
+                System.out.println("READ → Forwarding to Server " + serverId + " @ " + serverIP);
             } else {
-                processAppMessages(rawMessageContent);
-                messageCount++;
+                serverIP = "10.176.69.38"; // WRITE always goes to Node 6
+                System.out.println("WRITE → Forwarding to Server 6 @ " + serverIP);
+            }
+    
+            try (Socket serverSocket = new Socket(serverIP, port);
+                PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true)) {
+    
+                serverWriter.println(rawMessageContent);
+                serverWriter.flush();
+                System.out.println("Forwarded message to server.");
+            } catch (IOException e) {
+                System.err.println("Error sending to server.");
+                e.printStackTrace();
             }
         }
     }
+    
 
     /**
      * Method to process only non-sequencer messages on a non-sequencer node.

@@ -40,7 +40,7 @@ public class ChannelManager {
     public void initializeChannels() throws IOException, NumberFormatException {
         // Initiate Connection Channels
         startServer();
-        if (NodeId == 6) {
+        if (NodeId == 6|| NodeId == 7) {
             acceptServerConnectionOnly();  // new method
             return;  // skip rest
         }
@@ -92,7 +92,7 @@ public class ChannelManager {
     private void connectToHigherIdNodes() throws IOException {
         for (InetAddress nodeAddress : systemMapping.keySet()) {
             
-            if (systemMapping.get(nodeAddress) == 6) {
+            if (systemMapping.get(nodeAddress) == 6 || systemMapping.get(nodeAddress) == 7 ) {
                 continue;
             }
 
