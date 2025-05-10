@@ -15,6 +15,7 @@ public class NeighborListener implements Runnable{
 
     @Override
     public void run() {
+        System.out.println("NeighborListener is Ready");
         while(runningFlag.running) {
             int NodeId = connectionContext.getNodeID();
             int TOTAL_SERVERS = connectionContext.getMaxServers();
@@ -26,6 +27,7 @@ public class NeighborListener implements Runnable{
             try {
                 while ((rawMessageContent = predReader.readLine()) != null) {
                     Message message = new Message(rawMessageContent);
+                    System.out.println("Received Message: " + rawMessageContent);
                     if ((message.getMessageType()).equals("W")) {
                         // Directly do the write with priority
                         String[] KVPair = message.getMessageContent().split(":",2);

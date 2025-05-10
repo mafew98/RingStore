@@ -29,7 +29,8 @@ public class ClientListener implements Runnable {
 
     @Override
     public void run() {
-        try {    
+        try {
+            System.out.println("ClientLister Ready");
             while(runningFlag.running) {
                 // Accept any client access request
                 Socket clientSocket = clientListenerSocket.accept();
@@ -40,11 +41,12 @@ public class ClientListener implements Runnable {
                 
                 while ((rawMessageContent = clientReader.readLine()) != null) {
                     Message message = new Message(rawMessageContent);
+                    System.out.println("Received Message: " + rawMessageContent);
                     if ((message.getMessageType()).equals("R")) {
                         // Directly handle reads
                         String storedValue = dataStore.readData(Integer.parseInt(message.getMessageContent()));
                         PrintWriter clientWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-                        clientWriter.println(String.format("Key %d : Value %s at Server %d", message.getMessageContent(), storedValue, ConnectionContext.getNodeID()));
+                        clientWriter.println(String.format("Key %s : Value %s at Server %d", message.getMessageContent(), storedValue, ConnectionContext.getNodeID()));
                     }
                     else if ((message.getMessageType()).equals("W")) {
                         // Place writes in the write queue

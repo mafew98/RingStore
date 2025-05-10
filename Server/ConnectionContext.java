@@ -13,8 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import Server.WriteQueue.WriteQueue;
-
 public class ConnectionContext {
     private static int nodeId;
     private static final HashMap<Integer, InetAddress> nodeIPMapping = new HashMap<>();

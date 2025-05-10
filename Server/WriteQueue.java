@@ -1,15 +1,13 @@
-package Server.WriteQueue;
+package Server;
 
 import java.util.concurrent.PriorityBlockingQueue;
-
-import Server.Message;
 
 public class WriteQueue {
    
     protected PriorityBlockingQueue<Message> writeQueue; // Shared message queue
 
     public WriteQueue() {
-        this.writeQueue = new PriorityBlockingQueue<>(500, new WriteComparator());;
+        this.writeQueue = new PriorityBlockingQueue<Message>(500, new WriteComparator());;
     }
 
     /**

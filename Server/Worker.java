@@ -2,8 +2,6 @@ package Server;
 
 import java.io.PrintWriter;
 
-import Server.WriteQueue.WriteQueue;
-
 public class Worker implements Runnable{
     private WriteQueue writeQueue;
     private ConnectionContext connectionContext;
@@ -12,6 +10,7 @@ public class Worker implements Runnable{
     public Worker(ConnectionContext connectionContext, RingManager.RunningFlag runningFlag) {
         this.connectionContext = connectionContext;
         this.runningFlag = runningFlag;
+        this.writeQueue = connectionContext.getWriteQueue();
     }
 
     @Override
