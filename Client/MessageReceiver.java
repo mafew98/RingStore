@@ -2,6 +2,7 @@ package Client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Date;
@@ -65,44 +66,52 @@ public class MessageReceiver extends Thread {
      * @throws IOException
      */
     private void processAllMessages() throws IOException {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-        String rawMessageContent;
-    
-        while ((rawMessageContent = reader.readLine()) != null) {
-            String timestamp = sdf.format(new Date());
-            System.out.println(String.format("[%s]Sequenced message received: %s", timestamp, rawMessageContent));
-    
-            SequencedMessage sm = new SequencedMessage(rawMessageContent);
-            Message message = sm.getSequencedMessage();
-    
-            String key = message.getKey();
-            int serverId = (message.getType() == Message.MessageType.R)
-                    ? (message.getKey() != null ? hashToServer(key) : 1)
-                    : hashToServer(key);  // always hash on write
-            String serverIP = (serverId == 1) ? "10.176.69.38" : "10.176.69.39";
-            int port = connectionContext.getPort();
-    
-            boolean sent = false;
-            while (message.retryAllowed() && !sent) {
-                try (Socket serverSocket = new Socket(serverIP, port);
-                     PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true)) {
-    
-                    serverWriter.println(message.toString());
-                    serverWriter.flush();
-                    System.out.println("✅ Forwarded message to Server " + serverId + " @ " + serverIP);
-                    sent = true;
-    
-                } catch (IOException e) {
-                    message.decrementRf();
-                    System.err.println("❌ Failed to send to Server " + serverId + " — RF now: " + message.getRf());
-                    if (!message.retryAllowed()) {
-                        System.err.println("⚠️ RF exhausted. Server " + serverId + " assumed to be down.");
-                    }
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    String rawMessageContent;
+
+    while ((rawMessageContent = reader.readLine()) != null) {
+        String timestamp = sdf.format(new Date());
+        System.out.println(String.format("[%s]Sequenced message received: %s", timestamp, rawMessageContent));
+
+        // Parse the sequenced message
+        SequencedMessage sm = new SequencedMessage(rawMessageContent);
+        Message message = sm.getSequencedMessage();
+
+        // Determine key and server
+        String key = message.getKey();
+        int serverId = (message.getType() == Message.MessageType.R)
+                ? (key != null ? hashToServer(key) : 1)
+                : hashToServer(key);  // Always hash on write
+        String serverIP = (serverId == 1) ? "10.176.69.38" : "10.176.69.39";
+        int port = connectionContext.getPort();
+
+        boolean sent = false;
+        while (message.retryAllowed() && !sent) {
+            try (Socket serverSocket = new Socket(serverIP, port);
+                 PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
+                 BufferedReader serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()))) {
+
+                serverWriter.println(message.toString());
+                serverWriter.flush();
+
+                if (message.getType() == Message.MessageType.R) {
+                    String response = serverReader.readLine();
+                    System.out.println("✅ Server Response: " + response);
+                }
+
+                System.out.println("✅ Forwarded message to Server " + serverId + " @ " + serverIP);
+                sent = true;
+
+            } catch (IOException e) {
+                message.decrementRf();
+                System.err.println("❌ Failed to send to Server " + serverId + " — RF now: " + message.getRf());
+                if (!message.retryAllowed()) {
+                    System.err.println("⚠️ RF exhausted. Server " + serverId + " assumed to be down.");
                 }
             }
         }
     }
-    
+}
 
     /**
      * Method to process only non-sequencer messages on a non-sequencer node.
