@@ -56,8 +56,7 @@ public class SequencedMessage {
      * Method to convert a sequenced message to string (raw message)
      */
     public String toString() {
-        return Integer.toString(this.messageSequenceNo) + "-"
-                + Message.createRawMessage(sequencedMessage.getMessageContent(), sequencedMessage.getMessageClock());
+        return messageSequenceNo + "-" + sequencedMessage.toString();
     }
 
     /**
@@ -68,6 +67,7 @@ public class SequencedMessage {
      * @return
      */
     public static String createSequencedRawMessage(Message message, int sequenceNo) {
-        return (sequenceNo + "-" + Message.createRawMessage(message.getMessageContent(), message.getMessageClock()));
+        return sequenceNo + "-" + message.toString();
     }
+    
 }

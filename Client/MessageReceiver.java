@@ -70,35 +70,35 @@ public class MessageReceiver extends Thread {
     
         while ((rawMessageContent = reader.readLine()) != null) {
             String timestamp = sdf.format(new Date());
-            System.out.println(String.format("[%s]Message received: {%s}", timestamp, rawMessageContent));
+            System.out.println(String.format("[%s]Sequenced message received: %s", timestamp, rawMessageContent));
     
-            // Parse the sequenced message
             SequencedMessage sm = new SequencedMessage(rawMessageContent);
             Message message = sm.getSequencedMessage();
     
-            String serverIP;
+            String key = message.getKey();
+            int serverId = (message.getType() == Message.MessageType.R)
+                    ? (message.getKey() != null ? hashToServer(key) : 1)
+                    : hashToServer(key);  // always hash on write
+            String serverIP = (serverId == 1) ? "10.176.69.38" : "10.176.69.39";
             int port = connectionContext.getPort();
     
-            if (message.getType() == Message.MessageType.READ) {
-                int serverId = (message.getTargetServer() != null)
-                        ? message.getTargetServer()
-                        : hashToServer(message.getMessageContent());
-                serverIP = (serverId == 1) ? "10.176.69.38" : "10.176.69.39";
-                System.out.println("READ → Forwarding to Server " + serverId + " @ " + serverIP);
-            } else {
-                serverIP = "10.176.69.38"; // WRITE always goes to Node 6
-                System.out.println("WRITE → Forwarding to Server 6 @ " + serverIP);
-            }
+            boolean sent = false;
+            while (message.retryAllowed() && !sent) {
+                try (Socket serverSocket = new Socket(serverIP, port);
+                     PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true)) {
     
-            try (Socket serverSocket = new Socket(serverIP, port);
-                PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true)) {
+                    serverWriter.println(message.toString());
+                    serverWriter.flush();
+                    System.out.println("✅ Forwarded message to Server " + serverId + " @ " + serverIP);
+                    sent = true;
     
-                serverWriter.println(rawMessageContent);
-                serverWriter.flush();
-                System.out.println("Forwarded message to server.");
-            } catch (IOException e) {
-                System.err.println("Error sending to server.");
-                e.printStackTrace();
+                } catch (IOException e) {
+                    message.decrementRf();
+                    System.err.println("❌ Failed to send to Server " + serverId + " — RF now: " + message.getRf());
+                    if (!message.retryAllowed()) {
+                        System.err.println("⚠️ RF exhausted. Server " + serverId + " assumed to be down.");
+                    }
+                }
             }
         }
     }
@@ -126,7 +126,9 @@ public class MessageReceiver extends Thread {
      * @param rawMessageContent
      */
     public void processAppMessages(String rawMessageContent) {
-        Message messageReceived = new Message(rawMessageContent, nodeId);
+        
+        Message messageReceived = new Message(rawMessageContent);
+        messageReceived.setSenderNodeId(nodeId);
         messageQueue.addMessageToQueue(messageReceived);
     }
 }

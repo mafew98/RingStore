@@ -1,116 +1,96 @@
 package Client;
 
 public class Message {
+
     public enum MessageType {
-        READ,
-        WRITE
+        R, W
     }
-    private String messageContent;
-    private VectorClock messageClock;
-    private Integer NodeId;
+
     private MessageType type;
-    private Integer targetServer;
+    private int seqNo;
+    private int rf;
+    private String msgContent; // e.g., "1:Yukta" or "1"
+    private int senderNodeId;
 
-    /**
-     * Message Constructor to handle raw messages.
-     * A Raw message will be of the form "X,X,X,X: Message no. Y from Node Z"
-     * 
-     * @param rawMessage
-     * @param NodeId
-     */
-    public Message(String rawMessage, Integer NodeId) {
-        String[] messageParts = rawMessage.split(":", 4);
-        this.messageClock = new VectorClock(messageParts[0]);
-        this.type = MessageType.valueOf(messageParts[1]);
-        this.targetServer = (messageParts[2] == null || messageParts[2].isEmpty()) ? null : Integer.parseInt(messageParts[2]);
-        this.messageContent = messageParts[3];
-        this.NodeId = NodeId;
+    // Constructor from individual fields
+    public Message(MessageType type, int seqNo, int rf, String msgContent, int senderNodeId) {
+        this.type = type;
+        this.seqNo = seqNo;
+        this.rf = rf;
+        this.msgContent = msgContent;
+        this.senderNodeId = senderNodeId;
     }
 
-    /**
-     * Message Constructor to handle raw messages and guess the node ID
-     * A Raw message will be of the form "X,X,X,X: Message no. Y from Node Z"
-     * 
-     * @param rawMessage
-     * @param NodeId
-     */
-    public Message(String rawMessage) throws NumberFormatException {
-        String[] messageParts = rawMessage.split(":", 4);
-        this.messageClock = new VectorClock(messageParts[0]);
-        this.type = MessageType.valueOf(messageParts[1]);
-        this.targetServer = (messageParts[2] == null || messageParts[2].isEmpty()) ? null : Integer.parseInt(messageParts[2]);
-        this.messageContent = messageParts[3];
-        int index = messageContent.indexOf("from Node ");
-        if (index != -1) {
-            this.NodeId = Integer.parseInt(messageContent.substring(index + 10).trim()); // Extract Z
+    // Constructor from raw message string
+    public Message(String rawMessage) {
+        String[] parts = rawMessage.split(",", 4);
+        this.type = MessageType.valueOf(parts[0]);
+        this.seqNo = Integer.parseInt(parts[1]);
+        this.rf = Integer.parseInt(parts[2]);
+        this.msgContent = parts[3];
+        this.senderNodeId = -1; // Optional; you can set it after construction
+    }
+
+    // Converts to string for transmission
+    @Override
+    public String toString() {
+        return type + "," + seqNo + "," + rf + "," + msgContent;
+    }
+
+    // Getters
+    public MessageType getType() {
+        return type;
+    }
+
+    public int getSeqNo() {
+        return seqNo;
+    }
+
+    public int getRf() {
+        return rf;
+    }
+
+    public String getMsgContent() {
+        return msgContent;
+    }
+
+    public int getSenderNodeId() {
+        return senderNodeId;
+    }
+
+    // Setters
+    public void setRf(int rf) {
+        this.rf = rf;
+    }
+
+    public void setSeqNo(int seqNo) {
+        this.seqNo = seqNo;
+    }
+
+    public void setSenderNodeId(int senderNodeId) {
+        this.senderNodeId = senderNodeId;
+    }
+
+    // Retry logic: reduce RF by 1
+    public boolean retryAllowed() {
+        return rf > 0;
+    }
+
+    public void decrementRf() {
+        if (rf > 0) rf--;
+    }
+
+    // Utility: extract key from msgContent (before ':')
+    public String getKey() {
+        return msgContent.split(":")[0];
+    }
+
+    // Utility: extract value from msgContent (after ':') if present
+    public String getValue() {
+        if (msgContent.contains(":")) {
+            return msgContent.split(":", 2)[1];
+        } else {
+            return null;
         }
     }
-
-    /**
-     * Constructor creating a new message.
-     * 
-     * @param messageContent
-     * @param messageClock
-     * @param NodeId
-     */
-    public Message(String messageContent, VectorClock messageClock, int NodeId, MessageType type, Integer targetServer) {
-        this.messageContent = messageContent;
-        this.messageClock = messageClock;
-        this.NodeId = NodeId;
-        this.type = type;
-        this.targetServer = targetServer;
-    }
-
-    
-    /**
-     * Getting message content
-     * 
-     * @return
-     */
-    public String getMessageContent() {
-        return this.messageContent;
-    }
-
-    /**
-     * Getting message clock (Not the same as current node's vector clock)
-     * 
-     * @return
-     */
-    public VectorClock getMessageClock() {
-        return this.messageClock;
-    }
-
-    /**
-     * Gets the ID of the source node of the message.
-     * 
-     * @return
-     */
-    public Integer getNodeId() {
-        return this.NodeId;
-    }
-
-    public MessageType getType() {
-        return this.type;
-    }
-
-    public Integer getTargetServer() {
-        return this.targetServer;
-    }
-    /**
-     * Static method to create a raw message.
-     * 
-     * @param messageContent
-     * @param messageClock
-     * @return
-     */
-    public static String createRawMessage(String messageContent, VectorClock messageClock, MessageType type, Integer targetServer) {
-        String target = (targetServer == null) ? "" : targetServer.toString();
-        return messageClock.toString() + ":" + type.name() + ":" + target + ":" + messageContent;
-    }
-
-    // Backward compatibility for existing code
-public static String createRawMessage(String messageContent, VectorClock messageClock) {
-    return createRawMessage(messageContent, messageClock, MessageType.WRITE, null); // Default to WRITE with no target
-}
-
 }

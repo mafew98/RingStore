@@ -47,23 +47,26 @@ public class Sequencer implements Runnable {
     private void processAppMessages() {
         while (messageQueue.peekMessageQueue() != null && isDeliverable(messageQueue.peekMessageQueue())) {
             Message topMessage = messageQueue.pollMessageQueue();
-            // deliver the message
+    
+            // Assign the sequence number
+            sequenceNo++;
+            topMessage.setSeqNo(sequenceNo);
+    
+            // Deliver the message
             deliverMessage(topMessage);
-            // sequence the message and put in Broadcast Queue
-            sequenceNo += 1;
-            // connectionContext
-            //         .addToSequencedBroadcastQueue(SequencedMessage.createSequencedRawMessage(topMessage, sequenceNo));
-            // ;
-            String sequencedMsg = SequencedMessage.createSequencedRawMessage(topMessage, sequenceNo);
-            PrintWriter backToClient = connectionContext.getOutputWriterHash().get(topMessage.getNodeId());
+    
+            // Send it back as raw sequenced message
+            String rawMessage = sequenceNo + "-" + topMessage.toString();
+            PrintWriter backToClient = connectionContext.getOutputWriterHash().get(topMessage.getSenderNodeId());
             if (backToClient != null) {
-                backToClient.println(sequencedMsg);
+                backToClient.println(rawMessage);
                 backToClient.flush();
-                System.out.println("Sent sequenced message back to Node " + topMessage.getNodeId());
+                System.out.println("Sending back to Node " + topMessage.getSenderNodeId());
             }
-
         }
     }
+    
+    
 
     /**
      * Method to process and sequence received sequenced messages
@@ -83,27 +86,18 @@ public class Sequencer implements Runnable {
         }
     }
 
-    /**
-     * Compares the message at the top of the queue with the current vector clock to
-     * determine if it is deliverable.
-     * Synchronized method since multiple threads may access this.
-     * 
-     * @param message
-     * @return boolean
-     */
-    private synchronized boolean isDeliverable(Message message) {
-        return vectorClock.canDeliver(message.getMessageClock(), message.getNodeId(), connectionContext.getNodeId());
-    }
+   /**
+ * Always returns true in total-ordering mode.
+ */
+private synchronized boolean isDeliverable(Message message) {
+    return true; // No vector clock checks anymore
+}
 
-    /**
-     * Increments the vector clock to indicate delivery and delivers a message.
-     * 
-     * @param message
-     */
-    private synchronized void deliverMessage(Message message) {
-        System.out.println(
-                "Delivered: " + Message.createRawMessage(message.getMessageContent(), message.getMessageClock()));
-        vectorClock.merge(message.getMessageClock());
-        DELIVERY_COUNT++;
-    }
+/**
+ * Just logs the message delivery.
+ */
+private synchronized void deliverMessage(Message message) {
+    System.out.println("Delivered: " + message.toString());
+    DELIVERY_COUNT++;
+}
 }

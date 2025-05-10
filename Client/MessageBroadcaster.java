@@ -73,7 +73,10 @@ public void run() {
                 vectorClock.increment(currentNodeId);
             }
 
-            String rawMessage = Message.createRawMessage(content, vectorClock, type, targetServer);
+            Message.MessageType shortType = type;
+            Message msg = new Message(shortType, 0, 3, content, currentNodeId); // seqNo=0 for now, RF=3
+            String rawMessage = msg.toString(); // Final string sent to sequencer
+
             PrintWriter sequencerWriter = outputStreams.get(connectionContext.getSequencerID());
 
             if (sequencerWriter != null) {
