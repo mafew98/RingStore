@@ -25,7 +25,7 @@ public class Worker implements Runnable{
                     // Handle the write to the current copy
                     Message topMessage = writeQueue.pollWriteQueue();
                     String[] KVPair = topMessage.getMessageContent().split(":",2);
-                    connectionContext.getDataStore().writeData(Integer.parseInt(KVPair[0]), KVPair[1]);
+                    connectionContext.getDataStore().writeData(Integer.parseInt(KVPair[0]), KVPair[1], topMessage.getNodeNumber());
 
                     // Forward the message
                     int messageNodeNumber = topMessage.getNodeNumber();

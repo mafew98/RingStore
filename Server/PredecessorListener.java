@@ -44,6 +44,8 @@ public class PredecessorListener implements Runnable{
 
                     } else if ((message.getMessageType()).equals("R")) {
                         handleReconnectionMessages(message);
+                    } else if ((message.getMessageType()).equals("D")) {
+                        connectionContext.getDataStore().addDiffs(message.getMessageContent());
                     }
                 }
             } catch (IOException e) {
@@ -63,7 +65,7 @@ public class PredecessorListener implements Runnable{
         if (currNodeNumber ==  potSecondaryNode || currNodeNumber == potTertiaryNode) {
             // Directly do the write with priority
             String[] KVPair = message.getMessageContent().split(":",2);
-            connectionContext.getDataStore().writeData(Integer.parseInt(KVPair[0]), KVPair[1]);
+            connectionContext.getDataStore().writeData(Integer.parseInt(KVPair[0]), KVPair[1], messageNodeNumber);
             int successorNode = connectionContext.getSuccessor();
             // Forward the message if server present
             if (successorNode == potTertiaryNode) {
@@ -99,8 +101,11 @@ public class PredecessorListener implements Runnable{
         }
     }
 
-    private void handleReconnectionMessages(Message message) {
-        System.out.println("Handling Reconnection not implemented");
+    private void handleReconnectionMessages(Message message) throws IOException {
+        System.out.println("Sending Diff Messages");
+        PrintWriter predWriter = connectionContext.getOutputWriter(connectionContext.getPredecessor());
+        String diffs = String.format("D,,%d,%s",currNodeNumber,connectionContext.getDataStore().getDiffs(message.getNodeNumber()));
+        predWriter.println(diffs);
     }
 
      private void addToConnectionContext(int tempNodeId, Socket tempSocket) throws IOException {

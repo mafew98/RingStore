@@ -2,6 +2,7 @@ package Server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class SuccessorListener implements Runnable {
@@ -37,7 +38,10 @@ public class SuccessorListener implements Runnable {
                     replacement.start();
                     break;
                 } else if ((message.getMessageType()).equals("R")) {
-                    System.out.println("Read the recovery message!");
+                    // get diffs and send it back rn
+                    handleReconnectionMessages(message); 
+                } else if ((message.getMessageType()).equals("D")) {
+                    connectionContext.getDataStore().addDiffs(message.getMessageContent());
                 }
             }
         } catch (IOException | InterruptedException e) {
@@ -60,5 +64,12 @@ public class SuccessorListener implements Runnable {
                 newSuccessor = (newSuccessor + 1) % connectionContext.getMaxServers();
             }
         }
+    }
+
+    private void handleReconnectionMessages(Message message) throws IOException {
+        System.out.println("Sending Diff Messages");
+        PrintWriter sucWriter = connectionContext.getOutputWriter(connectionContext.getSuccessor());
+        String diffs = String.format("D,,%d,%s",ConnectionContext.getNodeID(),connectionContext.getDataStore().getDiffs(message.getNodeNumber()));
+        sucWriter.println(diffs);
     }
 }

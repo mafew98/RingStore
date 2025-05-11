@@ -141,7 +141,8 @@ public class RingMutator {
     
     public void rebel() throws IOException{
         // 1. Stop accepting any connections
-        connectionContext.stopAcceptionConnections(); 
+        connectionContext.stopAcceptionConnections();
+        connectionContext.stopSL();
         // 2. let predecessor and successor know
         sendFailMessage();
         // 3. close links
@@ -181,6 +182,7 @@ public class RingMutator {
             sendRequestToPredecessor();
             sendRequestToSuccessor();
             connectionContext.startAcceptingConnections(); 
+            connectionContext.startSL();
         } catch (IOException e) {
             e.printStackTrace();
         }
