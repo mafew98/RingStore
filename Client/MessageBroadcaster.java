@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.text.SimpleDateFormat;
 
 public class MessageBroadcaster implements Runnable {
-    private VectorClock vectorClock;
     private ConnectionContext connectionContext;
     private HashMap<Integer, PrintWriter> outputStreams; // Hash between nodeID and the output socket stream
     private final int currentNodeId;
@@ -17,7 +16,6 @@ public class MessageBroadcaster implements Runnable {
     // Constructor
     public MessageBroadcaster(ConnectionContext connectionContext) throws IOException {
         this.connectionContext = connectionContext;
-        this.vectorClock = connectionContext.getVectorClock();
         this.currentNodeId = connectionContext.getNodeId();
         this.outputStreams = connectionContext.getOutputWriterHash();
     }
@@ -61,9 +59,6 @@ public void run() {
             }
 
             String content = parts[2];
-            synchronized (vectorClock) {
-                vectorClock.increment(currentNodeId);
-            }
 
             Message.MessageType shortType = type;
             Message msg = new Message(shortType, 0, 3, content, currentNodeId); // seqNo=0 for now, RF=3

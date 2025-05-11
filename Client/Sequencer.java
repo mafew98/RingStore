@@ -8,7 +8,6 @@ public class Sequencer implements Runnable {
     private ConnectionContext connectionContext;
     private MessageQueue messageQueue;
     private SequencerQueue sequencerQueue;
-    private VectorClock vectorClock;
     private int DELIVERY_COUNT = 0;
     private final int TOTAL_MESSAGES = 500;
 
@@ -20,7 +19,6 @@ public class Sequencer implements Runnable {
         }
         this.connectionContext = connectionContext;
         this.messageQueue = connectionContext.getMessageQueue();
-        this.vectorClock = connectionContext.getVectorClock();
         this.sequencerQueue = connectionContext.getSequencerQueue();
     }
 

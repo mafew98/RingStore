@@ -199,28 +199,6 @@ public class ConnectionContext {
         }
         return null;
     }
-
-    /**
-     * VECTOR CLOCK
-     */
-
-    private VectorClock vectorClock;
-
-    /**
-     * Vector Clock getter
-     * @return
-     */
-    public VectorClock getVectorClock() {
-        return vectorClock;
-    }
-
-    /**
-     * Vector Clock setter
-     * @param vectorClock
-     */
-    public void setVectorClock(VectorClock vectorClock) {
-        this.vectorClock = vectorClock;
-    }
     
 
     /*

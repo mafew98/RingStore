@@ -72,7 +72,8 @@ public class MessageReceiver extends Thread {
      * 
      * @throws IOException
      */
-    private void processAllMessages() throws IOException {
+
+     private void processAllMessages() throws IOException {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     String rawMessageContent;
 
@@ -80,35 +81,29 @@ public class MessageReceiver extends Thread {
         String timestamp = sdf.format(new Date());
         System.out.println(String.format("[%s]Sequenced message received: %s", timestamp, rawMessageContent));
 
-        // STEP 1: Parse message
         SequencedMessage sm = new SequencedMessage(rawMessageContent);
         Message message = sm.getSequencedMessage();
 
-        // STEP 2: Extract key safely
         String key = message.getKey();
         if (key == null || key.isEmpty()) {
             System.err.println("Invalid key in message: " + rawMessageContent);
             continue;
         }
 
-        int port = connectionContext.getPort();
-        
         int primary = hashToServer(key);
-            int[] serverIds = new int[3];
-            for (int i = 0; i < 3; i++) {
-                serverIds[i] = 6 + ((primary - 6 + i) % 4); // ensures values in [6,7,8,9]
-            }
+        int[] serverIds = new int[3];
+        for (int i = 0; i < 3; i++) {
+            serverIds[i] = 6 + ((primary - 6 + i) % 4); // ensures IDs in [6, 7, 8, 9]
+        }
 
-    
-
-        // STEP 3: Dynamically load IPs from sysNodes.properties
         Map<Integer, String> serverMap = getServerIdToIpMap();
+        int port = connectionContext.getPort();
         boolean sent = false;
 
         for (int targetId : serverIds) {
             String serverIP = serverMap.get(targetId);
             if (serverIP == null) {
-                System.err.println(" No IP mapping found for server ID: " + targetId);
+                System.err.println("No IP mapping found for server ID: " + targetId);
                 continue;
             }
 
@@ -121,20 +116,21 @@ public class MessageReceiver extends Thread {
 
                 if (message.getType() == Message.MessageType.R) {
                     String response = serverReader.readLine();
-                    System.out.println("Server Response: " + response);
+                    System.out.println("Server Response from " + targetId + ": " + response);
                 }
 
-                System.out.println("Forwarded message to Server " + targetId + " @ " + serverIP);
+                System.out.println("Sent to Server " + targetId + " @ " + serverIP);
                 sent = true;
-                // break;
+                break; // stop after first successful send
 
             } catch (IOException e) {
                 System.err.println("Failed to connect to Server " + targetId + " (" + serverIP + ")");
+                // try next
             }
         }
 
         if (!sent) {
-            System.err.println("ERROR: Could not send to either primary or backup server.");
+            System.err.println("ERROR: Could not send to any of the 3 replica servers.");
         }
     }
 }

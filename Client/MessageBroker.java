@@ -2,7 +2,6 @@ package Client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashMap;
@@ -33,9 +32,6 @@ public class MessageBroker {
      * phase.
      */
     public void initialization() {
-        // Initialize vector clock for the node
-        connectionContext.setVectorClock(new VectorClock(MAX_PROCESSES));
-
         // Initialize Message Queue
         connectionContext.setMessageQueue(new MessageQueue(MAX_PROCESSES * MAX_PROCESSES_MESSAGES));
 
