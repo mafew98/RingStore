@@ -1,6 +1,9 @@
 package Server;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -45,19 +48,22 @@ public class ServerListener implements Runnable{
                 connectionContext.setSocketTimeout(10);
                 Socket tempSocket = serverSocket.accept();
                 InetAddress remoteIP = tempSocket.getInetAddress();
-                int tempNodeId = 0;
+                
                 System.out.println("Accepted Connection from " + remoteIP);
-                for (Map.Entry<Integer, InetAddress> entry: connectionContext.getNodeIPMapping().entrySet()) {
-                    if (entry.getValue().equals(remoteIP)) {
-                        tempNodeId = entry.getKey();
-                        break;
-                    }
+                int tempNodeId = identifyConnector(remoteIP);
+                if (tempNodeId == -1) {
+                    throw new NumberFormatException("Incorrect Value found for Node ID");
                 }
+
                 if (checkValidSuccessor(tempNodeId)) {
                     //Restart the Successor listener
+                    System.out.println("Valid Successor Detected");
+                    addToConnectionContext(tempNodeId, tempSocket);
                     restartSuccessor(tempNodeId);
                 } else if (checkValidPredecessor(tempNodeId)) {
                     // Restart Predecessor
+                    System.out.println("Valid Predecessor Detected");
+                    addToConnectionContext(tempNodeId, tempSocket);
                     restartPredecessor(tempNodeId);
                 }
             }
@@ -66,13 +72,21 @@ public class ServerListener implements Runnable{
         }
     }
 
+    private void addToConnectionContext(int tempNodeId, Socket tempSocket) throws IOException {
+        connectionContext.addConnection(tempNodeId, tempSocket);
+        connectionContext.addInputReader(tempNodeId, new BufferedReader(new InputStreamReader(tempSocket.getInputStream()), 65536));
+        connectionContext.addOutputWriter(tempNodeId, new PrintWriter(tempSocket.getOutputStream(), true)); // setting autoflush to true
+    }
+
     private void startSuccessorThread() {
+        System.out.println("Starting Successor Thread");
         successorListener = new Thread(new SuccessorListener(connectionContext, ringMutator));
         successorListener.start();
         connectionContext.successorListener = successorListener;
     }
 
     private void startPredecessorThread() {
+        System.out.println("Starting predecessor Thread");
         predecessorListener = new Thread(new PredecessorListener(connectionContext, ringMutator));
         predecessorListener.start();
         connectionContext.predecessorListener = predecessorListener;
@@ -87,8 +101,8 @@ public class ServerListener implements Runnable{
 
     private boolean checkValidPredecessor(int tempNodeId) {
         int currNodeId = ConnectionContext.getNodeID();
-        int secondaryPredId = (currNodeId + 1) % connectionContext.getMaxServers();
-        int tertiaryPredId = (currNodeId + 2) % connectionContext.getMaxServers();
+        int secondaryPredId = (currNodeId - 1 + connectionContext.getMaxServers()) % connectionContext.getMaxServers();
+        int tertiaryPredId = (currNodeId - 2 + connectionContext.getMaxServers()) % connectionContext.getMaxServers();
         return (tempNodeId == secondaryPredId || tempNodeId == tertiaryPredId);
     }
 
@@ -108,5 +122,17 @@ public class ServerListener implements Runnable{
         successorListener.interrupt();
         connectionContext.setSuccessor(newSuccessor);
         startSuccessorThread();
+    }
+
+    private int identifyConnector(InetAddress remoteIP){
+        int tempNodeId = -1;
+        for (Map.Entry<Integer, InetAddress> entry: connectionContext.getNodeIPMapping().entrySet()) {
+            if (entry.getValue().equals(remoteIP)) {
+                tempNodeId = entry.getKey();
+                System.out.println("Key for new connection found to be " + tempNodeId);
+                break;
+            }
+        }
+        return tempNodeId;
     }
 }

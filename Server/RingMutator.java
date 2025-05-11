@@ -180,6 +180,7 @@ public class RingMutator {
         try {
             sendRequestToPredecessor();
             sendRequestToSuccessor();
+            connectionContext.startAcceptingConnections(); 
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -205,13 +206,13 @@ public class RingMutator {
     private void sendRequestToPredecessor() throws IOException {
         int currNodeId = ConnectionContext.getNodeID();
         for (int i=1; i < 3; i++) {
-            int potSuccessor = (currNodeId - i + connectionContext.getMaxServers()) % connectionContext.getMaxServers();
-            if (connectToNode(potSuccessor)){
-                System.out.println("Connected to Successor " + potSuccessor);
-                connectionContext.setSuccessor(potSuccessor);
-                Socket newSocket = connectionContext.getConnectionSocket(potSuccessor);
+            int potPredecessor = (currNodeId - i + connectionContext.getMaxServers()) % connectionContext.getMaxServers();
+            if (connectToNode(potPredecessor)){
+                System.out.println("Connected to Predecessor " + potPredecessor);
+                connectionContext.setPredecessor(potPredecessor);
+                Socket newSocket = connectionContext.getConnectionSocket(potPredecessor);
                 BufferedReader in = new BufferedReader(new InputStreamReader(newSocket.getInputStream()), 65536);
-                connectionContext.addInputReader(potSuccessor, in);
+                connectionContext.addInputReader(potPredecessor, in);
                 PrintWriter out = new PrintWriter(newSocket.getOutputStream(), true); // setting autoflush to true
                 out.println(String.format("R,,%d,", currNodeId));
                 break;

@@ -2,6 +2,7 @@ package Server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
@@ -26,6 +27,7 @@ public class PredecessorListener implements Runnable{
             TOTAL_SERVERS = connectionContext.getMaxServers();
             BufferedReader predReader;
             try {
+                System.out.println(connectionContext.getPredecessor());
                 predReader = connectionContext.getInputReader(connectionContext.getPredecessor());
                 System.out.println("Predreader returned as : " + predReader);
                 String rawMessageContent;
@@ -41,8 +43,7 @@ public class PredecessorListener implements Runnable{
                         handleFailureMessages(message);
 
                     } else if ((message.getMessageType()).equals("R")) {
-                        //Fill IN
-                        System.out.println("NOT IMPLEMENTED");
+                        handleReconnectionMessages(message);
                     }
                 }
             } catch (IOException e) {
@@ -96,6 +97,16 @@ public class PredecessorListener implements Runnable{
             connectionContext.startSL();
             throw new IOException("Exiting current PredecessorListener after replacement.");
         }
+    }
+
+    private void handleReconnectionMessages(Message message) {
+        System.out.println("Handling Reconnection not implemented");
+    }
+
+     private void addToConnectionContext(int tempNodeId, Socket tempSocket) throws IOException {
+        connectionContext.addConnection(tempNodeId, tempSocket);
+        connectionContext.addInputReader(tempNodeId, new BufferedReader(new InputStreamReader(tempSocket.getInputStream()), 65536));
+        connectionContext.addOutputWriter(tempNodeId, new PrintWriter(tempSocket.getOutputStream(), true)); // setting autoflush to true
     }
 
 }

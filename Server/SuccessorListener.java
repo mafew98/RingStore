@@ -36,6 +36,8 @@ public class SuccessorListener implements Runnable {
                     connectionContext.successorListener = replacement;
                     replacement.start();
                     break;
+                } else if ((message.getMessageType()).equals("R")) {
+                    System.out.println("Read the recovery message!");
                 }
             }
         } catch (IOException | InterruptedException e) {
