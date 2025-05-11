@@ -4,14 +4,20 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 
 public class ConnectionContext {
     private static int nodeId;
@@ -20,11 +26,14 @@ public class ConnectionContext {
     private static Integer MAX_SERVERS;
     private ServerSocket serverSocket;
     private ServerSocket clientSocketServer;
-    private HashMap<Integer, Socket> connectionHash = new HashMap<>();
-    private HashMap<Integer, BufferedReader> inputReaderHash = new HashMap<>();
-    private HashMap<Integer, PrintWriter> outputWriterHash = new HashMap<>();
+    private ConcurrentHashMap<Integer, Socket> connectionHash = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, BufferedReader> inputReaderHash = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, PrintWriter> outputWriterHash = new ConcurrentHashMap<>();
     private DataStore dataStore;
     private WriteQueue writeQueue;
+    private volatile Neighbors neighbors = new Neighbors();
+    private AtomicBoolean acceptConnections = new AtomicBoolean(true);
+    private AtomicBoolean enableServerListener = new AtomicBoolean(true);
 
     /**
      * Static method to read the systems property file.
@@ -112,6 +121,10 @@ public class ConnectionContext {
         serverSocket.close();
     }
 
+    public ServerSocket getServerSocket() {
+        return serverSocket;
+    }
+
     public void setClientSocketServer(ServerSocket clientServerSocket) {
         this.clientSocketServer = clientServerSocket;
     }
@@ -133,7 +146,7 @@ public class ConnectionContext {
      * 
      * @return
      */
-    public HashMap<Integer, Socket> getConnectionHash() {
+    public ConcurrentHashMap<Integer, Socket> getConnectionHash() {
         return this.connectionHash;
     }
 
@@ -142,33 +155,57 @@ public class ConnectionContext {
      * 
      * @param connectionHash
      */
-    public void setConnectionHash(HashMap<Integer, Socket> connectionHash) {
+    public void setConnectionHash(ConcurrentHashMap<Integer, Socket> connectionHash) {
         this.connectionHash = connectionHash;
     }
 
-    // Placeholder: Methods to add individual input and output streams. For
-    // extensibility. Not currently used.
-    public void addConnection(int nodeId, Socket socket) {
-        connectionHash.put(nodeId, socket);
+    public Socket getConnectionSocket(int targetNodeId) {
+        return connectionHash.get(targetNodeId);
+    }
+    
+    // Placeholder: Methods to add individual input and output streams.
+    public void addConnection(int connectionNodeId, Socket socket) {
+        connectionHash.put(connectionNodeId, socket);
+    }
+
+    // Removes a connection and its associated printWriter and bufferedReader objects from the connection context
+    public Socket removeConnection(int connectionNodeId) {
+        inputReaderHash.remove(connectionNodeId);
+        outputWriterHash.remove(connectionNodeId);
+        return connectionHash.remove(connectionNodeId);
     }
 
     // Placeholder: Methods to add individual input and output streams. Not used;
     // for extensibility.
-    public void addInputReader(int nodeId, BufferedReader inputReader) {
-        inputReaderHash.put(nodeId, inputReader);
+    public void addInputReader(int inputNodeId, BufferedReader inputReader) {
+        inputReaderHash.put(inputNodeId, inputReader);
     }
 
-    public BufferedReader getInputReader(int nodeId) {
-        return inputReaderHash.get(nodeId);
+    public BufferedReader getInputReader(int inputNodeId) throws IOException {
+        BufferedReader inputReader = inputReaderHash.get(inputNodeId);
+        System.out.println("Getting the input reader");
+        if (inputReader == null) {
+            Socket targetSocket = connectionHash.get(inputNodeId);
+            inputReader = new BufferedReader(new InputStreamReader(targetSocket.getInputStream()));
+            addInputReader(inputNodeId, inputReader);
+        }
+        System.out.println("The input reader is " + inputReader);
+        return inputReader;
     }
     // Placeholder: Methods to add individual input and output streams. Not used;
     // for extensibility.
-    public void addOutputWriter(int nodeId, PrintWriter outputWriter) {
-        outputWriterHash.put(nodeId, outputWriter);
+    public void addOutputWriter(int outputNodeId, PrintWriter outputWriter) {
+        outputWriterHash.put(outputNodeId, outputWriter);
     }
 
-    public PrintWriter getOuputWriter(int nodeId) {
-        return outputWriterHash.get(nodeId);
+    public PrintWriter getOutputWriter(int outputNodeId) throws IOException {
+        PrintWriter outputWriter = outputWriterHash.get(outputNodeId);
+        if (outputWriter == null) {
+            Socket targetSocket = connectionHash.get(outputNodeId);
+            outputWriter = new PrintWriter(new OutputStreamWriter(targetSocket.getOutputStream()), true);
+            addOutputWriter(outputNodeId, outputWriter);
+        }
+        return outputWriter;
     }
 
     public DataStore getDataStore() {
@@ -186,4 +223,92 @@ public class ConnectionContext {
     public WriteQueue getWriteQueue() {
         return this.writeQueue;
     }
+
+    static class Neighbors {
+        private Integer predecessor;
+        private Integer successor;
+    
+        public synchronized void setPredecessor(Integer p) {
+            this.predecessor = p;
+        }
+    
+        public synchronized Integer getPredecessor() {
+            return predecessor;
+        }
+    
+        public synchronized void setSuccessor(Integer s) {
+            this.successor = s;
+        }
+    
+        public synchronized Integer getSuccessor() {
+            return successor;
+        }
+    
+    }
+
+    public void setPredecessor(Integer predecessorNodeId) {
+        neighbors.setPredecessor(predecessorNodeId);
+    }
+
+    public Integer getPredecessor() {
+        return neighbors.getPredecessor();
+    }
+
+    public void setSuccessor(Integer successorNodeId) {
+        neighbors.setSuccessor(successorNodeId);
+    }
+
+    public Integer getSuccessor(){
+        return neighbors.getSuccessor();
+    }
+
+    // This method is acceessed concurrently by multiple threads but does not need synchronization since it is internally using an atomic boolean
+    public boolean isAcceptingConnections() {
+        return acceptConnections.get();
+    }
+
+    public void stopAcceptionConnections() {
+        acceptConnections.set(false);
+    }
+
+    public void startAcceptingConnections() {
+        acceptConnections.set(true);
+    }
+
+    // This method is acceessed concurrently by multiple threads but does not need synchronization since it is internally using an atomic boolean
+    public boolean isSLEnabled() {
+        return enableServerListener.get();
+    }
+
+    public void stopSL() {
+        enableServerListener.set(false);
+    }
+
+    public void startSL() {
+        enableServerListener.set(true);
+    }
+
+    /**
+     * Closes all sockets established during connection phase and shuts down the
+     * server.
+     * 
+     * @throws IOException
+     */
+    public void closeChannels() throws IOException {
+        for (Map.Entry<Integer, Socket> entry : connectionHash.entrySet()) {
+            entry.getValue().close();
+        }
+        // Shutting down the server
+        serverSocket.close();
+    }
+
+    public synchronized void setSocketTimeout(int timeoutMillis) throws SocketException {
+        serverSocket.setSoTimeout(timeoutMillis);
+    }
+    //====================================
+    //THREAD STORAGE
+    //====================================
+    public volatile Thread predecessorListener;
+    public volatile Thread successorListener;
+
 }

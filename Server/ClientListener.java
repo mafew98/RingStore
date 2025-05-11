@@ -32,31 +32,60 @@ public class ClientListener implements Runnable {
         try {
             System.out.println("ClientLister Ready");
             while(runningFlag.running) {
-                // Accept any client access request
                 Socket clientSocket = clientListenerSocket.accept();
-                System.out.println("Connection established from: " + clientSocket.getInetAddress());
-
-                BufferedReader clientReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                String rawMessageContent;
-                
-                while ((rawMessageContent = clientReader.readLine()) != null) {
-                    Message message = new Message(rawMessageContent);
-                    System.out.println("Received Message: " + rawMessageContent);
-                    if ((message.getMessageType()).equals("R")) {
-                        // Directly handle reads
-                        String storedValue = dataStore.readData(Integer.parseInt(message.getMessageContent()));
-                        PrintWriter clientWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-                        clientWriter.println(String.format("Key %s : Value %s at Server %d", message.getMessageContent(), storedValue, ConnectionContext.getNodeID()));
+                PrintWriter clientWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
+                if (connectionContext.isAcceptingConnections()) {              
+                    // Accept any client access request
+                    System.out.println("Connection established from: " + clientSocket.getInetAddress());
+                    BufferedReader clientReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                    String rawMessageContent;
+                    
+                    while ((rawMessageContent = clientReader.readLine()) != null) {
+                        Message message = new Message(rawMessageContent);
+                        System.out.println("Received Message: " + rawMessageContent);
+                        if ((message.getMessageType()).equals("R")) {
+                            // Directly handle reads
+                            String storedValue = dataStore.readData(Integer.parseInt(message.getMessageContent()));
+                            clientWriter.println(String.format("Key %s : Value %s at Server %d", message.getMessageContent(), storedValue, ConnectionContext.getNodeID()));
+                        }
+                        else if ((message.getMessageType()).equals("W")) {
+                            if (isMessageValid(message)) {
+                                // Place writes in the write queue
+                                connectionContext.getWriteQueue().addMessageToQueue(message);
+                            } else {
+                                clientWriter.println("Write Servers Unreachable. Write Failed");
+                            }
+                        }
                     }
-                    else if ((message.getMessageType()).equals("W")) {
-                        // Place writes in the write queue
-                        connectionContext.getWriteQueue().addMessageToQueue(message);
-                    }
-                }
+                    // closing the client socket
+                } else {
+                    // Give Replies if not accepting connections
+                    clientWriter.println("Server Down.");
+                } 
+                clientSocket.close();
             } 
         } catch (NumberFormatException | IOException e) {
             e.printStackTrace();
         }
         
+    }
+
+    private boolean isMessageValid(Message message) {
+        int currentNodeId = connectionContext.getNodeID();
+        // A client connection must be to the first or second server only!
+        int successorNode = connectionContext.getSuccessor();
+        int primaryNode = message.getNodeNumber();
+        int secondaryNode = (primaryNode + 1) % (connectionContext.getMaxServers());
+        int tertiaryNode = (primaryNode + 2) % (connectionContext.getMaxServers());
+        boolean output = false;
+        if (isValidSuccessor(currentNodeId, successorNode, primaryNode, secondaryNode, tertiaryNode)) {
+            output = true;
+        }
+        System.out.println("isMessageValid: " + output);
+        return output;
+    }
+
+    private boolean isValidSuccessor(int currentNodeId, int successorNode, int primaryNode, int secondaryNode, int tertiaryNode) {
+        return ((currentNodeId == primaryNode && (successorNode == secondaryNode || successorNode == tertiaryNode)) || (currentNodeId == secondaryNode && successorNode == tertiaryNode));
     }
 }

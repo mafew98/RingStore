@@ -3,20 +3,20 @@ package Server;
 public class Message {
     private String type;
     private Integer messageOrderNo;
-    private Integer replicationFactor;
+    private Integer nodeNumber;
     private String messageContent;
 
     /**
      * Message Constructor to handle raw messages.
-     * A Raw message will be of the form "Type,SeqNo,RF,key:value"
+     * A Raw message will be of the form "Type,SeqNo,NodeNo,key:value"
      * 
      * @param rawMessage
      */
     public Message(String rawMessage) {
         String[] messageParts = rawMessage.split(",", 4);
         this.type = messageParts[0];
-        this.messageOrderNo = Integer.parseInt(messageParts[1]);
-        this.replicationFactor = Integer.parseInt(messageParts[2]);
+        this.messageOrderNo = (messageParts[1].isEmpty())? 0 : Integer.parseInt(messageParts[1]);
+        this.nodeNumber = Integer.parseInt(messageParts[2]);
         this.messageContent = messageParts[3];
     }
 
@@ -38,8 +38,8 @@ public class Message {
         return this.messageOrderNo;
     }
 
-    public int getReplicationFactor() {
-        return this.replicationFactor;
+    public int getNodeNumber() {
+        return this.nodeNumber;
     }
 
     public String getMessageType() {
@@ -47,6 +47,6 @@ public class Message {
     }
 
     public String getForwardMessage() {
-        return String.format("%s,%d,%d,%s", type, messageOrderNo, replicationFactor - 1, messageContent);
+        return String.format("%s,%d,%d,%s", type, messageOrderNo, nodeNumber, messageContent);
     }
 }

@@ -3,7 +3,7 @@ package Server;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataStore {
-    ConcurrentHashMap<Integer, String> content;
+    private ConcurrentHashMap<Integer, String> content;
 
     public DataStore() {
         this.content = new ConcurrentHashMap<>();
@@ -15,5 +15,9 @@ public class DataStore {
 
     public String readData(int key) {
         return this.content.get(key);
+    }
+
+    public String getContent() {
+        return content.toString();
     }
 }
