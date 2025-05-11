@@ -40,7 +40,7 @@ public class ChannelManager {
     public void initializeChannels() throws IOException, NumberFormatException {
         // Initiate Connection Channels
         startServer();
-        if (NodeId == 6|| NodeId == 7) {
+        if (NodeId == 6|| NodeId == 7|| NodeId == 8|| NodeId == 9) {
             acceptServerConnectionOnly();  // new method
             return;  // skip rest
         }
@@ -92,7 +92,7 @@ public class ChannelManager {
     private void connectToHigherIdNodes() throws IOException {
         for (InetAddress nodeAddress : systemMapping.keySet()) {
             
-            if (systemMapping.get(nodeAddress) == 6 || systemMapping.get(nodeAddress) == 7 ) {
+            if (systemMapping.get(nodeAddress) == 6 || systemMapping.get(nodeAddress) == 7 ||  systemMapping.get(nodeAddress) == 8 || systemMapping.get(nodeAddress) == 9) {
                 continue;
             }
 
@@ -101,12 +101,7 @@ public class ChannelManager {
             }
         }
 
-        // // If this node is the sequencer, also connect to the server node (Node 6)
-        // if (NodeId == connectionContext.getSequencerID()) {
-        //     InetAddress serverAddress = InetAddress.getByName("10.176.69.38"); // dc07 IP
-        //     connectToNode(serverAddress);
-        //     System.out.println("Sequencer node " + NodeId + " connected to Server (Node 6)");
-        // }
+    
     }
 
     /**

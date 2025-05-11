@@ -4,27 +4,37 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Date;
-
+import java.util.HashMap;
+import java.util.Map;
 import java.text.SimpleDateFormat;
 
 public class MessageReceiver extends Thread {
     private BufferedReader reader;
     private Integer nodeId;
-    private SequencerQueue sequencerQueue;
     private int messageCount = 0;
-    private int sequencedMessageCount = 0;
     private static final int TOTAL_FOREIGN_MESSAGES = 100;
-    private static final int TOTAL_SEQUENCE_MESSAGES = 500; // Sets the maximum messages expected from outside. Internal
-                                                            // broadcasts go directly to the queues
+    
     private MessageQueue messageQueue;
     private ConnectionContext connectionContext;
 
     private int hashToServer(String key) {
-        return 1 + Math.abs(key.hashCode()) % 2; // returns 1 or 2
+        int[] serverIds = {6, 7, 8, 9}; // Corresponds to IPs in sysNodes.properties
+        return serverIds[Math.abs(key.hashCode()) % serverIds.length];
     }
 
+    private Map<Integer, String> getServerIdToIpMap() {
+        Map<Integer, String> serverMap = new HashMap<>();
+        for (Map.Entry<InetAddress, Integer> entry : connectionContext.getNodeIPMapping().entrySet()) {
+            int id = entry.getValue();
+            if (id >= 6 && id <= 9) {  // Only include servers
+                serverMap.put(id, entry.getKey().getHostAddress());
+            }
+        }
+        return serverMap;
+    }
     /**
      * Constructor method
      * 
@@ -36,7 +46,6 @@ public class MessageReceiver extends Thread {
         this.nodeId = nodeId; // receiver Node ID
         this.reader = connectionContext.getInputReaderHash().get(nodeId);
         this.messageQueue = connectionContext.getMessageQueue();
-        this.sequencerQueue = connectionContext.getSequencerQueue();
         this.connectionContext = connectionContext;
     }
 
@@ -49,8 +58,6 @@ public class MessageReceiver extends Thread {
     public void run() {
         try {
             if (connectionContext.getSequencerID() == nodeId) {
-                // We dont need to explicitly check for receiver count sent to the Sequencer
-                // since it is internal and we dont have a channel.
                 processAllMessages();
             } else {
                 processNonSequenceMessages();
@@ -73,20 +80,38 @@ public class MessageReceiver extends Thread {
         String timestamp = sdf.format(new Date());
         System.out.println(String.format("[%s]Sequenced message received: %s", timestamp, rawMessageContent));
 
-        // Parse the sequenced message
+        // STEP 1: Parse message
         SequencedMessage sm = new SequencedMessage(rawMessageContent);
         Message message = sm.getSequencedMessage();
 
-        // Determine key and server
+        // STEP 2: Extract key safely
         String key = message.getKey();
-        int serverId = (message.getType() == Message.MessageType.R)
-                ? (key != null ? hashToServer(key) : 1)
-                : hashToServer(key);  // Always hash on write
-        String serverIP = (serverId == 1) ? "10.176.69.38" : "10.176.69.39";
-        int port = connectionContext.getPort();
+        if (key == null || key.isEmpty()) {
+            System.err.println("Invalid key in message: " + rawMessageContent);
+            continue;
+        }
 
+        int port = connectionContext.getPort();
+        
+        int primary = hashToServer(key);
+            int[] serverIds = new int[3];
+            for (int i = 0; i < 3; i++) {
+                serverIds[i] = 6 + ((primary - 6 + i) % 4); // ensures values in [6,7,8,9]
+            }
+
+    
+
+        // STEP 3: Dynamically load IPs from sysNodes.properties
+        Map<Integer, String> serverMap = getServerIdToIpMap();
         boolean sent = false;
-        while (message.retryAllowed() && !sent) {
+
+        for (int targetId : serverIds) {
+            String serverIP = serverMap.get(targetId);
+            if (serverIP == null) {
+                System.err.println(" No IP mapping found for server ID: " + targetId);
+                continue;
+            }
+
             try (Socket serverSocket = new Socket(serverIP, port);
                  PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
                  BufferedReader serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()))) {
@@ -96,19 +121,20 @@ public class MessageReceiver extends Thread {
 
                 if (message.getType() == Message.MessageType.R) {
                     String response = serverReader.readLine();
-                    System.out.println("✅ Server Response: " + response);
+                    System.out.println("Server Response: " + response);
                 }
 
-                System.out.println("✅ Forwarded message to Server " + serverId + " @ " + serverIP);
+                System.out.println("Forwarded message to Server " + targetId + " @ " + serverIP);
                 sent = true;
+                // break;
 
             } catch (IOException e) {
-                message.decrementRf();
-                System.err.println("❌ Failed to send to Server " + serverId + " — RF now: " + message.getRf());
-                if (!message.retryAllowed()) {
-                    System.err.println("⚠️ RF exhausted. Server " + serverId + " assumed to be down.");
-                }
+                System.err.println("Failed to connect to Server " + targetId + " (" + serverIP + ")");
             }
+        }
+
+        if (!sent) {
+            System.err.println("ERROR: Could not send to either primary or backup server.");
         }
     }
 }

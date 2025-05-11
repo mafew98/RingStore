@@ -3,15 +3,22 @@ package Client;
 import java.io.*;
 import java.net.*;
 import java.util.HashMap;
+import java.util.Properties;
 
 public class ServerListener {
     public static void main(String[] args) throws IOException {
         int port = 24942;
         InetAddress localHost = InetAddress.getLocalHost();
         String serverIP = localHost.getHostAddress();
-
-        int serverId = serverIP.equals("10.176.69.38") ? 1 :
-                       serverIP.equals("10.176.69.39") ? 2 : 0;
+        Properties props = new Properties();
+        props.load(new FileInputStream("./sysNodes.properties"));
+        int serverId = 0;
+        for (String ip : props.stringPropertyNames()) {
+            if (ip.equals(serverIP)) {
+                serverId = Integer.parseInt(props.getProperty(ip));
+                break;
+            }
+        }
 
         System.out.println("Server " + serverId + " (" + serverIP + ") listening on port " + port);
 
