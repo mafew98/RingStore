@@ -46,12 +46,17 @@ public class ClientListener implements Runnable {
                         if ((message.getMessageType()).equals("R")) {
                             // Directly handle reads
                             String storedValue = dataStore.readData(Integer.parseInt(message.getMessageContent()));
-                            clientWriter.println(String.format("Key %s : Value %s at Server %d", message.getMessageContent(), storedValue, ConnectionContext.getNodeID()));
+                            String retString = String.format("Key %s : Value %s at Server %d", message.getMessageContent(), storedValue, ConnectionContext.getNodeID());
+                            if (storedValue == null || storedValue.isEmpty()) {
+                                retString = String.format("ERROR! Key %s not present", message.getMessageContent());
+                            }
+                            clientWriter.println(retString);
                         }
                         else if ((message.getMessageType()).equals("W")) {
                             if (isMessageValid(message)) {
                                 // Place writes in the write queue
                                 connectionContext.getWriteQueue().addMessageToQueue(message);
+                                clientWriter.println("ACK");
                             } else {
                                 clientWriter.println("Write Servers Unreachable. Write Failed");
                             }
@@ -60,7 +65,7 @@ public class ClientListener implements Runnable {
                     // closing the client socket
                 } else {
                     // Give Replies if not accepting connections
-                    clientWriter.println("Server Down.");
+                    clientWriter.println("NACK");
                 } 
                 clientSocket.close();
             } 

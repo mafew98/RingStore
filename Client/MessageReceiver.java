@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+
 import java.text.SimpleDateFormat;
 
 public class MessageReceiver extends Thread {
@@ -19,6 +21,7 @@ public class MessageReceiver extends Thread {
     
     private MessageQueue messageQueue;
     private ConnectionContext connectionContext;
+    private Map<Integer, String> serverMap;
 
     private int hashToServer(String key) {
     int[] serverIds = {6, 7, 8, 9, 10, 11, 12};
@@ -96,39 +99,25 @@ public class MessageReceiver extends Thread {
                 serverIds[i] = 6 + ((primary - 6 + i) % 7); 
             }
 
-            Map<Integer, String> serverMap = getServerIdToIpMap();
+            serverMap = getServerIdToIpMap();
             int port = connectionContext.getPort();
             boolean sent = false;
 
-            for (int targetId : serverIds) {
-                String serverIP = serverMap.get(targetId);
-                if (serverIP == null) {
-                    System.err.println("No IP mapping found for server ID: " + targetId);
-                    continue;
-                }
-
-                try (Socket serverSocket = new Socket(serverIP, port);
-                    PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
-                    BufferedReader serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()))) {
-
-                    String finalPayload = message.getType() + "," + message.getSeqNo() + "," + (targetId - 6) + "," + message.getMsgContent();
-                    serverWriter.println(finalPayload);
-                    serverWriter.flush();
-
-                    if (message.getType() == Message.MessageType.R) {
-                        String response = serverReader.readLine();
-                        System.out.println("Server Response from " + (targetId - 6) + ": " + response);
+            if (message.getType() == Message.MessageType.W) {
+                // Sequentially attempt to send to each server
+                for (int targetId : serverIds) {
+                    sent = sendToServer(targetId, port, message);
+                    if (sent) {
+                        break; // stop after first successful send
                     }
-
-                    System.out.println("Sent to Server " + (targetId - 6) + " @ " + serverIP);
-                    sent = true;
-                    break; // stop after first successful send
-
-                } catch (IOException e) {
-                    System.err.println("Failed to connect to Server " + targetId + " (" + serverIP + ")");
-                    // try next
-                }
-            }
+                }    
+            } else if (message.getType() == Message.MessageType.R) {
+                // Attempt to randomly read from a server
+                Random rand = new Random();
+                int randomReadServer = serverIds[rand.nextInt(serverIds.length)];
+                sendToServer(randomReadServer, port, message);
+                sent = true;
+            }       
 
             if (!sent) {
                 System.err.println("ERROR: Could not send to any of the 3 replica servers.");
@@ -162,5 +151,37 @@ public class MessageReceiver extends Thread {
         Message messageReceived = new Message(rawMessageContent);
         messageReceived.setSenderNodeId(nodeId);
         messageQueue.addMessageToQueue(messageReceived);
+    }
+
+    private boolean sendToServer(int targetId, int port, Message message) {
+        boolean sent = false;
+        String serverIP = serverMap.get(targetId);
+        if (serverIP == null) {
+            System.err.println("No IP mapping found for server ID: " + targetId);
+            sent = false;
+        }
+        try (Socket serverSocket = new Socket(serverIP, port);
+            PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
+            BufferedReader serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()))) {
+            String finalPayload = message.getType() + "," + message.getSeqNo() + "," + (targetId - 6) + "," + message.getMsgContent();
+            serverWriter.println(finalPayload);
+            serverWriter.flush();
+            if (message.getType() == Message.MessageType.R) {
+                String response = serverReader.readLine();
+                System.out.println("Server Response from " + (targetId - 6) + ": " + response);
+            } else if (message.getType() == Message.MessageType.W) {
+                String response = serverReader.readLine();
+                if (response == "NACK") {
+                    // Server is down
+                    sent = false;
+                }
+            }
+            System.out.println("Sent to Server " + (targetId - 6) + " @ " + serverIP);
+            sent = true;
+        } catch (IOException e) {
+            System.err.println("Failed to connect to Server " + targetId + " (" + serverIP + ")");
+            // try next
+        }
+        return sent;
     }
 }

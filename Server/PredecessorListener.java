@@ -9,7 +9,6 @@ import java.net.Socket;
 public class PredecessorListener implements Runnable{
     private ConnectionContext connectionContext;
     private RingMutator ringMutator;
-    private Socket oldSocket;
     private int currNodeNumber;
     private int TOTAL_SERVERS;
 
