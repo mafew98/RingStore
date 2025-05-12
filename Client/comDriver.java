@@ -20,7 +20,8 @@ public class comDriver {
 
 
         // If this is the server node (Node 6), run ServerListener
-        if (currentNodeId == 6 || currentNodeId == 7 || currentNodeId == 8 || currentNodeId == 9) {
+        if (currentNodeId >= 6 && currentNodeId <= 12){
+
             System.out.println("This is the Server node (Node 6). Launching ServerListener...");
             ServerListener.main(args);
             return;

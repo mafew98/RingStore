@@ -21,15 +21,15 @@ public class MessageReceiver extends Thread {
     private ConnectionContext connectionContext;
 
     private int hashToServer(String key) {
-        int[] serverIds = {6, 7, 8, 9}; // Corresponds to IPs in sysNodes.properties
-        return serverIds[Math.abs(key.hashCode()) % serverIds.length];
-    }
+    int[] serverIds = {6, 7, 8, 9, 10, 11, 12};
+    return serverIds[Math.abs(key.hashCode()) % serverIds.length];
+}
 
     private Map<Integer, String> getServerIdToIpMap() {
         Map<Integer, String> serverMap = new HashMap<>();
         for (Map.Entry<InetAddress, Integer> entry : connectionContext.getNodeIPMapping().entrySet()) {
             int id = entry.getValue();
-            if (id >= 6 && id <= 9) {  // Only include servers
+            if (id >= 6 && id <= 12) {  // Only include servers
                 serverMap.put(id, entry.getKey().getHostAddress());
             }
         }
@@ -93,7 +93,7 @@ public class MessageReceiver extends Thread {
             int primary = hashToServer(key);
             int[] serverIds = new int[3];
             for (int i = 0; i < 3; i++) {
-                serverIds[i] = 6 + ((primary - 6 + i) % 4); // ensures IDs in [6, 7, 8, 9]
+                serverIds[i] = 6 + ((primary - 6 + i) % 7); 
             }
 
             Map<Integer, String> serverMap = getServerIdToIpMap();

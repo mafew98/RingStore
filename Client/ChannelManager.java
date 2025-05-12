@@ -40,10 +40,11 @@ public class ChannelManager {
     public void initializeChannels() throws IOException, NumberFormatException {
         // Initiate Connection Channels
         startServer();
-        if (NodeId == 6|| NodeId == 7|| NodeId == 8|| NodeId == 9) {
-            acceptServerConnectionOnly();  // new method
-            return;  // skip rest
+        if (NodeId >= 6 && NodeId <= 12) {
+            acceptServerConnectionOnly();
+            return;
         }
+
         connectToHigherIdNodes();
         acceptConnectionsFromLowerIdNodes();
 
@@ -92,9 +93,10 @@ public class ChannelManager {
     private void connectToHigherIdNodes() throws IOException {
         for (InetAddress nodeAddress : systemMapping.keySet()) {
             
-            if (systemMapping.get(nodeAddress) == 6 || systemMapping.get(nodeAddress) == 7 ||  systemMapping.get(nodeAddress) == 8 || systemMapping.get(nodeAddress) == 9) {
+            if (systemMapping.get(nodeAddress) >= 6 && systemMapping.get(nodeAddress) <= 12) {
                 continue;
             }
+
 
             if (systemMapping.get(nodeAddress) > NodeId) {
                 connectToNode(nodeAddress);
