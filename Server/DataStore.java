@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DataStore {
-    private ConcurrentHashMap<Integer, String> content = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, List<Integer>> metadata = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, String> content;
+    private ConcurrentHashMap<Integer, List<Integer>> metadata;
     public DataStore() {
         this.content = new ConcurrentHashMap<>();
+        this.metadata = new ConcurrentHashMap<>();
     }
 
     public void writeData(int key, String content, int hashServer) {
@@ -45,7 +46,7 @@ public class DataStore {
         for (int serverNumber : potvals) {
             String partial = getContentPerServer(serverNumber);
             if (!partial.isEmpty()) {
-                combinedResult.append(partial).append(",");
+                combinedResult.append(partial).append(":");
             }
         }
 
@@ -71,13 +72,17 @@ public class DataStore {
                 result.append(serverNumber).append("-").append(key).append("=").append(value).append(":");
             }
         }
+        
+        if (result.length() > 0) {
+            result.setLength(result.length() - 1);
+        }
         return result.toString();
     }
 
     public void addDiffs(String input) {
         if (input == null || input.isEmpty()) return;
 
-        String[] entries = input.split(",");
+        String[] entries = input.split(":");
         for (String entry : entries) {
             // Split into "serverNo-key" and "value"
             String[] keyValue = entry.split("=", 2);
