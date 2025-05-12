@@ -16,17 +16,6 @@ public class comDriver {
         ConnectionContext.readSystemProperties();
         Integer currentNodeId = ConnectionContext.getCurrentNodeID();
         
-        
-
-
-        // If this is the server node (Node 6), run ServerListener
-        if (currentNodeId >= 6 && currentNodeId <= 12){
-
-            System.out.println("This is the Server node (Node 6). Launching ServerListener...");
-            ServerListener.main(args);
-            return;
-        }
-
         // Else: this is a client node (Node 1 to 5)
         System.out.println("This is a Client node (Node " + currentNodeId + "). Launching Total Order Broadcast...");
 

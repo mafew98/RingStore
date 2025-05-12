@@ -5,6 +5,9 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.Properties;
 
+/**
+ * TEST SERVER. NOT USED
+ */
 public class ServerListener {
     public static void main(String[] args) throws IOException {
         int port = 24942;
