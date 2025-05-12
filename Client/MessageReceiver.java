@@ -111,16 +111,16 @@ public class MessageReceiver extends Thread {
                     PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
                     BufferedReader serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()))) {
 
-                    String finalPayload = message.getType() + "," + message.getSeqNo() + "," + targetId + "," + message.getMsgContent();
+                    String finalPayload = message.getType() + "," + message.getSeqNo() + "," + (targetId - 6) + "," + message.getMsgContent();
                     serverWriter.println(finalPayload);
                     serverWriter.flush();
 
                     if (message.getType() == Message.MessageType.R) {
                         String response = serverReader.readLine();
-                        System.out.println("Server Response from " + targetId + ": " + response);
+                        System.out.println("Server Response from " + (targetId - 6) + ": " + response);
                     }
 
-                    System.out.println("Sent to Server " + targetId + " @ " + serverIP);
+                    System.out.println("Sent to Server " + (targetId - 6) + " @ " + serverIP);
                     sent = true;
                     break; // stop after first successful send
 

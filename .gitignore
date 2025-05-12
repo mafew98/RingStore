@@ -3,3 +3,4 @@
 testlogs/
 *.tar
 *.pdf
+.vscode/
