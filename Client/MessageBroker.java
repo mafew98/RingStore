@@ -9,6 +9,16 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 
+
+/**
+ * The MessageBroker class handles the coordination and control of
+ * message flow between clients, the sequencer, and servers.
+ * It supports the initialization of queues, launching the sequencer,
+ * receiving messages, and broadcasting them to the appropriate targets.
+ *
+ 
+ * Authors: Matthew George , Yukta Shah
+ */
 public class MessageBroker {
 
     private HashMap<Integer, Socket> connectionHash;

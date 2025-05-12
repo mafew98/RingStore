@@ -3,6 +3,12 @@ package Client;
 import java.util.HashSet;
 import java.util.concurrent.PriorityBlockingQueue;
 
+/**
+ * MessageQueue manages a priority queue of messages based on their delivery eligibility.
+ * It ensures causal or total order delivery by maintaining proper message ordering.
+ *
+ * Authors: Matthew George
+ */
 public class MessageQueue {
     protected PriorityBlockingQueue<Message> messageQueue; // Shared message queue
 

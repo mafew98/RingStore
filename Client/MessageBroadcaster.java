@@ -1,3 +1,10 @@
+/**
+ * The MessageBroadcaster class handles client-side message generation and
+ * dispatch to the sequencer. It captures user input via the terminal and
+ * constructs formatted READ/WRITE messages to be sent to the sequencer node.
+ * @author Mathew George
+ * @author Yukta Shah
+ **/
 package Client;
 
 import java.io.BufferedReader;
@@ -13,19 +20,29 @@ public class MessageBroadcaster implements Runnable {
     private final int currentNodeId;
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-    // Constructor
+/**
+ * Initializes the MessageBroadcaster with a connection context,
+ * capturing this node’s ID and mapping of node IDs to output streams.
+ *
+ * @param connectionContext shared communication context for the current node
+ * @throws IOException if output stream mapping fails
+ */
     public MessageBroadcaster(ConnectionContext connectionContext) throws IOException {
         this.connectionContext = connectionContext;
         this.currentNodeId = connectionContext.getNodeId();
         this.outputStreams = connectionContext.getOutputWriterHash();
     }
 
-    /**
-     * Main Broadcaster method. Does the following actions:
-     * 1. Go through all the sockets and create an output stream.
-     * 2. Iteratively increment the vector clock value and prepare a message.
-     * 3. Send the output messages to each of the streams
-     */
+/**
+ * The main execution loop for the client-side CLI broadcaster.
+ * Steps:
+ * - Skips execution if the node is the sequencer (sequencer does not broadcast)
+ * - Reads user input from terminal in format: Type:ServerID:Content
+ * - Constructs and serializes a Message object
+ * - Sends the message to the sequencer for ordering
+ *
+ * Handles graceful termination on "exit" input.
+ */
     @Override
 public void run() {
     if (connectionContext.getSequencerID() == currentNodeId) {

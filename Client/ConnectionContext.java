@@ -9,10 +9,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 /**
- * Class to contain all information about the connections being made in the system.
+ * The ConnectionContext class encapsulates all the networking state of a node in the system,
+ * including its open sockets, readers/writers, and node role (client, server, or sequencer).
+ * It maintains the mapping of IP addresses to node IDs, manages communication channels,
+ * and stores the shared queues for message passing and sequencing.
+ *
+ * Used by all participants in the system to coordinate socket-level setup and teardown,
+ * as well as to identify peer nodes and roles during execution.
  * @author Mathew George
+ * @author Yukta Shah
  */
 public class ConnectionContext {
     private static int nodeId;

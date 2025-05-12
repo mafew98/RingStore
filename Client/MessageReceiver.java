@@ -10,7 +10,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.text.SimpleDateFormat;
-
+/**
+ * MessageReceiver is a thread that listens for messages from a specific peer node.
+ * It processes both sequenced and application messages. For sequenced messages,
+ * it forwards them to the appropriate server(s). For unsequenced messages,
+ * it enqueues them for sequencing (if this node is the sequencer).
+ *
+ 
+ * Authors: Matthew George, Yukta Shah
+ */
 public class MessageReceiver extends Thread {
     private BufferedReader reader;
     private Integer nodeId;

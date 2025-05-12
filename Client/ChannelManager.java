@@ -1,5 +1,5 @@
+// ChannelManager.java
 package Client;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -7,14 +7,27 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Manages communication channels between nodes in the system.
+ * Establishes socket connections based on node IDs and coordinates
+ * the READY handshake among processes before broadcasting.
+ */
+
 public class ChannelManager {
 
+    /** Total number of machines to connect within the system. */
     public final int TOTAL_MACHINES;
+    /** Identifier of this node in the system. */
     private int NodeId;
+    /** Shared context for connection settings and I/O streams. */
     private ConnectionContext connectionContext;
+    /** Mapping of machine IP addresses to node IDs. */
     private HashMap<InetAddress, Integer> systemMapping;
+    /** Active socket connections keyed by node ID. */
     private HashMap<Integer, Socket> connectionHash;
+    /** Server socket used to accept incoming connections. */
     private ServerSocket serverSocket;
+    /** Maximum retry attempts when connecting to peers. */
     private final int MAX_RETRIES = 3;
 
     // Constructor
@@ -47,16 +60,19 @@ public class ChannelManager {
 
         connectToHigherIdNodes();
         acceptConnectionsFromLowerIdNodes();
-
         System.out.println("Node " + NodeId + " has established all connections.");
-
-        // Signal readiness
         sendReadySignal();
         waitForReadySignals();
         System.out.println("Node " + NodeId + " is now ready to start broadcasting messages.");
         System.out.println("================================================");
     }
 
+    /**
+     * Accepts a single connection from the sequencer node only.
+     * Intended for server-side processes (IDs 6–12).
+     *
+     * @throws IOException if socket accept fails
+     */
     private void acceptServerConnectionOnly() throws IOException {
         System.out.println("Node 6: Waiting for connection from sequencer only...");
         Socket inSocket = serverSocket.accept();

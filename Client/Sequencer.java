@@ -11,6 +11,17 @@ public class Sequencer implements Runnable {
     private int DELIVERY_COUNT = 0;
     private final int TOTAL_MESSAGES = 500;
 
+    /**
+ * The Sequencer class runs on the designated sequencer node.
+ * It receives messages from all clients, assigns sequence numbers,
+ * and sends back sequenced messages to the original sender.
+ *
+ * Responsibilities:
+ * - Maintain total order of messages using sequence numbers
+ * - Send sequenced messages back to the originating client
+ *
+ * Authors: Matthew George
+ */
     public Sequencer(boolean isSequencer, ConnectionContext connectionContext) {
         // First time initialization
         this.sequenceNo = 0;
