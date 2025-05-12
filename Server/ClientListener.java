@@ -9,9 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ClientListener implements Runnable {
-    //1. start server socket to accept connections from clients
-    //2. put request into the queue ordered by the sequence id of the message
-    //3. Writer thread that writes to the others
     private Integer clientListenerPort=24942;
     ServerSocket clientListenerSocket;
     ConnectionContext connectionContext;
@@ -30,7 +27,7 @@ public class ClientListener implements Runnable {
     @Override
     public void run() {
         try {
-            System.out.println("ClientLister Ready");
+            System.out.println("ClientListener Ready");
             while(runningFlag.running) {
                 Socket clientSocket = clientListenerSocket.accept();
                 PrintWriter clientWriter = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream()), true);
@@ -75,6 +72,11 @@ public class ClientListener implements Runnable {
         
     }
 
+    /**
+     * Checks the validity of a message for delivery
+     * @param message
+     * @return
+     */
     private boolean isMessageValid(Message message) {
         int currentNodeId = connectionContext.getNodeID();
         // A client connection must be to the first or second server only!
@@ -90,6 +92,15 @@ public class ClientListener implements Runnable {
         return output;
     }
 
+    /**
+     * Accesses if the successor currently set is viable or not
+     * @param currentNodeId
+     * @param successorNode
+     * @param primaryNode
+     * @param secondaryNode
+     * @param tertiaryNode
+     * @return
+     */
     private boolean isValidSuccessor(int currentNodeId, int successorNode, int primaryNode, int secondaryNode, int tertiaryNode) {
         return ((currentNodeId == primaryNode && (successorNode == secondaryNode || successorNode == tertiaryNode)) || (currentNodeId == secondaryNode && successorNode == tertiaryNode));
     }

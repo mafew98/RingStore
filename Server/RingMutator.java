@@ -47,7 +47,7 @@ public class RingMutator {
     }
 
     public boolean connectToNode(int targetNode) {
-        HashMap<Integer, InetAddress> systemMapping= connectionContext.getNodeIPMapping();
+        HashMap<Integer, InetAddress> systemMapping = connectionContext.getNodeIPMapping();
         boolean connected = false;
         int attempts = 0;
         InetAddress nodeAddress = systemMapping.get(targetNode);
@@ -63,7 +63,7 @@ public class RingMutator {
                 System.out.println("Connected to Node " + targetNode);
                 connected = true;
                 // Setting the successor Node
-                connectionContext.setSuccessor(targetNode);     
+                connectionContext.setSuccessor(targetNode);
             } catch (IOException e) {
                 attempts++;
                 System.err.println("Connection failed to Node " + targetNode + ". Attempt "
@@ -98,8 +98,8 @@ public class RingMutator {
             if (remoteSocketIP.equals(allowedIPAddress)) {
                 connectionContext.addConnection(targetNode, inSocket);
                 System.out.println("Accepted connection from node " + targetNode);
-                connected = true; //Ending connection search
-                //Setting the predeccessor node
+                connected = true; // Ending connection search
+                // Setting the predeccessor node
                 connectionContext.setPredecessor(targetNode);
             } else {
                 // Reject the connection request received
@@ -110,7 +110,8 @@ public class RingMutator {
     }
 
     /**
-     * Method to send READY signal to the successor node. Only used during initial setup
+     * Method to send READY signal to the successor node. Only used during initial
+     * setup
      * 
      * @throws IOException
      */
@@ -122,7 +123,8 @@ public class RingMutator {
     }
 
     /**
-     * acceptReadySignal() implements a wait for the predecessor node in the system to get
+     * acceptReadySignal() implements a wait for the predecessor node in the system
+     * to get
      * READY. This is not threaded since even if we are not listening
      * to the messages coming in on the inputstream, they are not lost since the OS
      * would handle and internally buffer there messages. So we can do this
@@ -133,13 +135,20 @@ public class RingMutator {
      */
     public void acceptReadySignal(int predecessorNode) throws IOException {
         Socket predecessorSocket = connectionContext.getConnectionHash().get(predecessorNode);
-        BufferedReader in = new BufferedReader(new InputStreamReader(predecessorSocket.getInputStream()), 65536); // 64KB Buffer
-        while (!in.readLine().equals("READY")) {}
+        BufferedReader in = new BufferedReader(new InputStreamReader(predecessorSocket.getInputStream()), 65536); // 64KB
+                                                                                                                  // Buffer
+        while (!in.readLine().equals("READY")) {
+        }
         connectionContext.addInputReader(predecessorNode, in);
-        System.out.println("Received READY");  
+        System.out.println("Received READY");
     }
-    
-    public void rebel() throws IOException{
+
+    /**
+     * Stage a rebellion and exit the Ring
+     * 
+     * @throws IOException
+     */
+    public void rebel() throws IOException {
         // 1. Stop accepting any connections
         connectionContext.stopAcceptionConnections();
         connectionContext.stopSL();
@@ -151,8 +160,7 @@ public class RingMutator {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.out.println("Thread Interrupted");
         }
         predecessorSocket.close();
         successorSocket.close();
@@ -161,7 +169,12 @@ public class RingMutator {
         System.out.println("Rebellion Complete. I am Isolated.");
     }
 
-    private void sendFailMessage() throws IOException{
+    /**
+     * Send Failure intimation to everyone else
+     * 
+     * @throws IOException
+     */
+    private void sendFailMessage() throws IOException {
         int predeccessor = connectionContext.getPredecessor();
         int successor = connectionContext.getSuccessor();
         PrintWriter sucWriter = connectionContext.getOutputWriter(successor);
@@ -169,30 +182,36 @@ public class RingMutator {
         try {
             Thread.sleep(50);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         PrintWriter predecessorWriter = connectionContext.getOutputWriter(predeccessor);
         predecessorWriter.println(String.format("F,%d,%d,", successor, NodeId));
     }
 
+    /**
+     * Attempt to rejoin the ring
+     */
     public void resurrect() {
-        // 1. find the successor
         try {
             sendRequestToPredecessor();
             sendRequestToSuccessor();
-            connectionContext.startAcceptingConnections(); 
+            connectionContext.startAcceptingConnections();
             connectionContext.startSL();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Method to route a request to successor in the ring
+     * 
+     * @throws IOException
+     */
     private void sendRequestToSuccessor() throws IOException {
         int currNodeId = ConnectionContext.getNodeID();
-        for (int i=1; i < 3; i++) {
+        for (int i = 1; i < 3; i++) {
             int potSuccessor = (currNodeId + i) % connectionContext.getMaxServers();
-            if (connectToNode(potSuccessor)){
+            if (connectToNode(potSuccessor)) {
                 System.out.println("Connected to Successor " + potSuccessor);
                 connectionContext.setSuccessor(potSuccessor);
                 Socket newSocket = connectionContext.getConnectionSocket(potSuccessor);
@@ -205,11 +224,17 @@ public class RingMutator {
         }
     }
 
+    /**
+     * * Method to route a request to predecessor in the ring
+     * 
+     * @throws IOException
+     */
     private void sendRequestToPredecessor() throws IOException {
         int currNodeId = ConnectionContext.getNodeID();
-        for (int i=1; i < 3; i++) {
-            int potPredecessor = (currNodeId - i + connectionContext.getMaxServers()) % connectionContext.getMaxServers();
-            if (connectToNode(potPredecessor)){
+        for (int i = 1; i < 3; i++) {
+            int potPredecessor = (currNodeId - i + connectionContext.getMaxServers())
+                    % connectionContext.getMaxServers();
+            if (connectToNode(potPredecessor)) {
                 System.out.println("Connected to Predecessor " + potPredecessor);
                 connectionContext.setPredecessor(potPredecessor);
                 Socket newSocket = connectionContext.getConnectionSocket(potPredecessor);

@@ -7,11 +7,23 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DataStore {
     private ConcurrentHashMap<Integer, String> content;
     private ConcurrentHashMap<Integer, List<Integer>> metadata;
+
+    /**
+     * The data storage solution tracks the data and the metadata to easily find
+     * diffs.
+     */
     public DataStore() {
         this.content = new ConcurrentHashMap<>();
         this.metadata = new ConcurrentHashMap<>();
     }
 
+    /**
+     * Write data to the data storage
+     * 
+     * @param key
+     * @param content
+     * @param hashServer
+     */
     public void writeData(int key, String content, int hashServer) {
         this.content.put(key, content);
         System.out.println(String.format("Values Gotten: %d %s %d", key, content, hashServer));
@@ -26,22 +38,40 @@ public class DataStore {
         }
     }
 
+    /**
+     * Read a key value from storage
+     * 
+     * @param key
+     * @return
+     */
     public String readData(int key) {
         return this.content.get(key);
     }
 
+    /**
+     * Get all the content present in the storage
+     * 
+     * @return
+     */
     public String getContent() {
         return content.toString();
     }
 
+    /**
+     * Find all the diffs (ie, keys that should be stored at the target node) that
+     * is present in storage
+     * 
+     * @param targetNode
+     * @return
+     */
     public String getDiffs(int targetNode) {
         // Static here
         int[] potvals = new int[] {
-            targetNode,
-            (targetNode - 1 + 7) % 7,
-            (targetNode - 2 + 7) % 7
+                targetNode,
+                (targetNode - 1 + 7) % 7,
+                (targetNode - 2 + 7) % 7
         };
-        
+
         StringBuilder combinedResult = new StringBuilder();
         for (int serverNumber : potvals) {
             String partial = getContentPerServer(serverNumber);
@@ -55,12 +85,18 @@ public class DataStore {
             combinedResult.setLength(combinedResult.length() - 1);
         }
 
-        return combinedResult.toString();    
+        return combinedResult.toString();
     }
 
+    /**
+     * Internal method to find diffs per server number
+     * 
+     * @param serverNumber
+     * @return
+     */
     private String getContentPerServer(int serverNumber) {
         List<Integer> contentKeys = metadata.get(serverNumber);
-        
+
         if (contentKeys == null || contentKeys.isEmpty()) {
             return "";
         }
@@ -72,24 +108,32 @@ public class DataStore {
                 result.append(serverNumber).append("-").append(key).append("=").append(value).append(":");
             }
         }
-        
+
         if (result.length() > 0) {
             result.setLength(result.length() - 1);
         }
         return result.toString();
     }
 
+    /**
+     * Add all the received diffs to storage
+     * 
+     * @param input
+     */
     public void addDiffs(String input) {
-        if (input == null || input.isEmpty()) return;
+        if (input == null || input.isEmpty())
+            return;
 
         String[] entries = input.split(":");
         for (String entry : entries) {
             // Split into "serverNo-key" and "value"
             String[] keyValue = entry.split("=", 2);
-            if (keyValue.length != 2) continue;
+            if (keyValue.length != 2)
+                continue;
 
             String[] serverAndKey = keyValue[0].split("-", 2);
-            if (serverAndKey.length != 2) continue;
+            if (serverAndKey.length != 2)
+                continue;
 
             try {
                 int serverNo = Integer.parseInt(serverAndKey[0]);
@@ -111,5 +155,5 @@ public class DataStore {
             }
         }
     }
-    
+
 }

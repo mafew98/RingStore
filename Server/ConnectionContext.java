@@ -18,7 +18,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
 public class ConnectionContext {
     private static int nodeId;
     private static final HashMap<Integer, InetAddress> nodeIPMapping = new HashMap<>();
@@ -42,7 +41,7 @@ public class ConnectionContext {
      * @throws IOException
      */
     public static void readSystemProperties() throws FileNotFoundException, IOException {
-        
+
         Properties readProps = new Properties();
         String rootPath = "./";
         String sysConfigPath = rootPath + "serverNodes.properties";
@@ -88,12 +87,13 @@ public class ConnectionContext {
         return nodeId;
     }
 
-    /** 
+    /**
      * @return int
      */
     public int getMaxServers() {
         return MAX_SERVERS;
     }
+
     /**
      * Returns the communication port number
      * 
@@ -116,7 +116,7 @@ public class ConnectionContext {
         return serverSocket;
     }
 
-    public void stopSocketServer() throws IOException{
+    public void stopSocketServer() throws IOException {
         System.out.println("Stopping Socket Server");
         serverSocket.close();
     }
@@ -162,13 +162,14 @@ public class ConnectionContext {
     public Socket getConnectionSocket(int targetNodeId) {
         return connectionHash.get(targetNodeId);
     }
-    
+
     // Placeholder: Methods to add individual input and output streams.
     public void addConnection(int connectionNodeId, Socket socket) {
         connectionHash.put(connectionNodeId, socket);
     }
 
-    // Removes a connection and its associated printWriter and bufferedReader objects from the connection context
+    // Removes a connection and its associated printWriter and bufferedReader
+    // objects from the connection context
     public Socket removeConnection(int connectionNodeId) {
         inputReaderHash.remove(connectionNodeId);
         outputWriterHash.remove(connectionNodeId);
@@ -192,12 +193,13 @@ public class ConnectionContext {
         System.out.println("The input reader is " + inputReader);
         return inputReader;
     }
-    // Placeholder: Methods to add individual input and output streams. Not used;
-    // for extensibility.
+
+    // Placeholder: Methods to add individual input and output streams
     public void addOutputWriter(int outputNodeId, PrintWriter outputWriter) {
         outputWriterHash.put(outputNodeId, outputWriter);
     }
 
+    // Method to get the stored output writers
     public PrintWriter getOutputWriter(int outputNodeId) throws IOException {
         PrintWriter outputWriter = outputWriterHash.get(outputNodeId);
         if (outputWriter == null) {
@@ -208,42 +210,59 @@ public class ConnectionContext {
         return outputWriter;
     }
 
+    /**
+     * Pointer to the content storage
+     * @return
+     */
     public DataStore getDataStore() {
         return this.dataStore;
     }
 
+    /**
+     * Set the storage container
+     */
     public void setDataStore() {
         this.dataStore = new DataStore();
     }
 
+    /**
+     * Queue to track all write requests
+     */
     public void setWriteQueue() {
         this.writeQueue = new WriteQueue();
     }
 
+    /**
+     * Return the write queue
+     * @return
+     */
     public WriteQueue getWriteQueue() {
         return this.writeQueue;
     }
 
+    /**
+     * Class to define the predecessor and successor of a node in the server ring
+     */
     static class Neighbors {
         private Integer predecessor;
         private Integer successor;
-    
+
         public synchronized void setPredecessor(Integer p) {
             this.predecessor = p;
         }
-    
+
         public synchronized Integer getPredecessor() {
             return predecessor;
         }
-    
+
         public synchronized void setSuccessor(Integer s) {
             this.successor = s;
         }
-    
+
         public synchronized Integer getSuccessor() {
             return successor;
         }
-    
+
     }
 
     public void setPredecessor(Integer predecessorNodeId) {
@@ -258,11 +277,12 @@ public class ConnectionContext {
         neighbors.setSuccessor(successorNodeId);
     }
 
-    public Integer getSuccessor(){
+    public Integer getSuccessor() {
         return neighbors.getSuccessor();
     }
 
-    // This method is acceessed concurrently by multiple threads but does not need synchronization since it is internally using an atomic boolean
+    // This method is acceessed concurrently by multiple threads but does not need
+    // synchronization since it is internally using an atomic boolean
     public boolean isAcceptingConnections() {
         return acceptConnections.get();
     }
@@ -275,7 +295,8 @@ public class ConnectionContext {
         acceptConnections.set(true);
     }
 
-    // This method is acceessed concurrently by multiple threads but does not need synchronization since it is internally using an atomic boolean
+    // This method is acceessed concurrently by multiple threads but does not need
+    // synchronization since it is internally using an atomic boolean
     public boolean isSLEnabled() {
         return enableServerListener.get();
     }
@@ -305,9 +326,10 @@ public class ConnectionContext {
     public synchronized void setSocketTimeout(int timeoutMillis) throws SocketException {
         serverSocket.setSoTimeout(timeoutMillis);
     }
-    //====================================
-    //THREAD STORAGE
-    //====================================
+
+    // ====================================
+    // THREAD STORAGE
+    // ====================================
     public volatile Thread predecessorListener;
     public volatile Thread successorListener;
 

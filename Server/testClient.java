@@ -5,7 +5,10 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class testClient {
-
+    /**
+     * TEST CLIENT FOR SERVER SIDE TESTING. NOT USED!
+     * @param args
+     */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 

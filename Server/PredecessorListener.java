@@ -26,9 +26,9 @@ public class PredecessorListener implements Runnable{
             TOTAL_SERVERS = connectionContext.getMaxServers();
             BufferedReader predReader;
             try {
-                System.out.println(connectionContext.getPredecessor());
+                System.out.println("Predecessor is " + connectionContext.getPredecessor());
                 predReader = connectionContext.getInputReader(connectionContext.getPredecessor());
-                System.out.println("Predreader returned as : " + predReader);
+
                 String rawMessageContent;
                 while ((rawMessageContent = predReader.readLine()) != null) {
                     Message message = new Message(rawMessageContent);
@@ -50,7 +50,7 @@ public class PredecessorListener implements Runnable{
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println("Exiting Thread");
+            System.out.println("Exiting Predecessor Listener Thread");
             return;            
         }
     }
@@ -77,11 +77,14 @@ public class PredecessorListener implements Runnable{
         }
     }
 
+    /**
+     * handle failure of predecessor or successor
+     * @param message
+     * @throws IOException
+     */
     private void handleFailureMessages(Message message) throws IOException {
-        System.out.println("Disabling SL");
         connectionContext.stopSL();
         // wait for the new predecessor
-        System.out.println("Handling failures");
         int predeccessor = connectionContext.getPredecessor();
         int newPredecessor = message.getMessageOrderNo(); //Sending predecessor number there.
         System.out.println("Waiting for Connection Request from node:" + newPredecessor);
@@ -100,6 +103,11 @@ public class PredecessorListener implements Runnable{
         }
     }
 
+    /**
+     * Handle reconnection requests
+     * @param message
+     * @throws IOException
+     */
     private void handleReconnectionMessages(Message message) throws IOException {
         System.out.println("Sending Diff Messages");
         PrintWriter predWriter = connectionContext.getOutputWriter(connectionContext.getPredecessor());

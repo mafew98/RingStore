@@ -35,7 +35,6 @@ public class ServerListener implements Runnable{
             try {
                 handleNewConnections();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -72,12 +71,21 @@ public class ServerListener implements Runnable{
         }
     }
 
+    /**
+     * Add connections to the connection context
+     * @param tempNodeId
+     * @param tempSocket
+     * @throws IOException
+     */
     private void addToConnectionContext(int tempNodeId, Socket tempSocket) throws IOException {
         connectionContext.addConnection(tempNodeId, tempSocket);
         connectionContext.addInputReader(tempNodeId, new BufferedReader(new InputStreamReader(tempSocket.getInputStream()), 65536));
         connectionContext.addOutputWriter(tempNodeId, new PrintWriter(tempSocket.getOutputStream(), true)); // setting autoflush to true
     }
 
+    /**
+     * Begin the successor listener thread
+     */
     private void startSuccessorThread() {
         System.out.println("Starting Successor Thread");
         successorListener = new Thread(new SuccessorListener(connectionContext, ringMutator));
@@ -85,6 +93,9 @@ public class ServerListener implements Runnable{
         connectionContext.successorListener = successorListener;
     }
 
+    /**
+     * Start the predecessor listener thread
+     */
     private void startPredecessorThread() {
         System.out.println("Starting predecessor Thread");
         predecessorListener = new Thread(new PredecessorListener(connectionContext, ringMutator));
@@ -92,6 +103,11 @@ public class ServerListener implements Runnable{
         connectionContext.predecessorListener = predecessorListener;
     }
 
+    /**
+     * check validity of successor
+     * @param tempNodeId
+     * @return
+     */
     private boolean checkValidSuccessor(int tempNodeId) {
         int currNodeId = ConnectionContext.getNodeID();
         int secondaryNodeId = (currNodeId + 1) % connectionContext.getMaxServers();
@@ -99,6 +115,11 @@ public class ServerListener implements Runnable{
         return (tempNodeId == secondaryNodeId || tempNodeId == tertiaryNodeId);
     }
 
+    /**
+     * check validity of predecessor
+     * @param tempNodeId
+     * @return
+     */
     private boolean checkValidPredecessor(int tempNodeId) {
         int currNodeId = ConnectionContext.getNodeID();
         int secondaryPredId = (currNodeId - 1 + connectionContext.getMaxServers()) % connectionContext.getMaxServers();
