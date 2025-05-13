@@ -114,7 +114,7 @@ public class MessageReceiver extends Thread {
             if (message.getType() == Message.MessageType.W) {
                 // Sequentially attempt to send to each server
                 for (int targetId : serverIds) {
-                    sent = sendToServer(targetId, port, message);
+                    sent = sendToServer(targetId, port, message, primary);
                     if (sent) {
                         break; // stop after first successful send
                     }
@@ -123,7 +123,7 @@ public class MessageReceiver extends Thread {
                 // Attempt to randomly read from a server
                 Random rand = new Random();
                 int randomReadServer = serverIds[rand.nextInt(serverIds.length)];
-                sendToServer(randomReadServer, port, message);
+                sendToServer(randomReadServer, port, message, primary);
                 sent = true;
             }       
 
@@ -161,7 +161,7 @@ public class MessageReceiver extends Thread {
         messageQueue.addMessageToQueue(messageReceived);
     }
 
-    private boolean sendToServer(int targetId, int port, Message message) {
+    private boolean sendToServer(int targetId, int port, Message message, int primary) {
         boolean sent = false;
         String serverIP = serverMap.get(targetId);
         if (serverIP == null) {
@@ -171,17 +171,18 @@ public class MessageReceiver extends Thread {
         try (Socket serverSocket = new Socket(serverIP, port);
             PrintWriter serverWriter = new PrintWriter(serverSocket.getOutputStream(), true);
             BufferedReader serverReader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()))) {
-            String finalPayload = message.getType() + "," + message.getSeqNo() + "," + (targetId - 6) + "," + message.getMsgContent();
+            String finalPayload = message.getType() + "," + message.getSeqNo() + "," + (primary - 6) + "," + message.getMsgContent();
             serverWriter.println(finalPayload);
             serverWriter.flush();
             if (message.getType() == Message.MessageType.R) {
                 String response = serverReader.readLine();
-                System.out.println("Server Response from " + (targetId - 6) + ": " + response);
+                System.out.println("Server Response from " + (primary - 6) + ": " + response);
             } else if (message.getType() == Message.MessageType.W) {
                 String response = serverReader.readLine();
-                if (response == "NACK") {
+                if (response.equals("NACK")) {
                     // Server is down
                     sent = false;
+                    return sent;
                 }
             }
             System.out.println("Sent to Server " + (targetId - 6) + " @ " + serverIP);

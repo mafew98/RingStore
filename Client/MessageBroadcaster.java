@@ -47,7 +47,7 @@ public class MessageBroadcaster implements Runnable {
 public void run() {
     if (connectionContext.getSequencerID() == currentNodeId) {
         // Sequencer doesn't broadcast messages from CLI
-        return;
+        // return;
     }
 
     try (BufferedReader console = new BufferedReader(new InputStreamReader(System.in))) {
