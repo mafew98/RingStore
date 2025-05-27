@@ -29,7 +29,7 @@ There are two packages present in this repository -
     
    2.1. READ operations can go randomly to any of the three servers that can contain a key-value pair. This depends on the hash function and replication factor chosen.
 
-   2.2. WRITE operations always go to the primary server (represented by H(Ok) in the specification), if present. On receiving a write request, the primary server writes it to its data storage and then relays the write request to the secondary node. The secondary server performs the same action as the primary and subsequently relays that request to the tertiary server. 
+   2.2. WRITE operations always go to the primary server (represented by H(Ok) in the specification), if present. On receiving a write request, the primary server writes it to its data storage and then relays the write request to the secondary node. The secondary server performs the same action as the primary and subsequently relays that request to the tertiary server. With this logic, a consistent total ordering is always present. However, since there is no locking implemented, the solution is an eventually consistent one. By implementing a version of two-phase locking across replicas, we can convert this system into a causally consistent solution.
 
    2.3. UPDATE operations are just write operations where the key preexists. The value is overwritten in this case.
 
@@ -79,6 +79,8 @@ Potential Improvements:
 
 - The sequencer client currently cannot send messages to the servers. Its job is only to sequence. Extension for it to also send messages is trivial since most of the code is present already to do so.
 
+- Implement two phase locking to convert this solution from an eventually consistent one to a causally consistent solution.
+  
 - System properties files for the server and the client can be unified.
 
 - Add a key-value pair deletion function. (trivial)
