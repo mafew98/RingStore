@@ -83,6 +83,8 @@ Potential Improvements:
 
 - Add a key-value pair deletion function. (trivial)
 
+- Use a consistent hash function like Murmur3.
+
 - Reduce the number of listener threads used on each server.
 
 - Standardize Error reporting.
