@@ -33,6 +33,7 @@ There are two packages present in this repository -
 
 Compilation Instructions:
 ------------------------
+0. Modify the sysNodes.properties and serverNodes.Properties files to hold the IPs of the nodes that will be used.
 
 1. Copy the RINGSTORE package to all the machines in the system and extract the package. This can be done by:
 
