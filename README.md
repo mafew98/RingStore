@@ -20,11 +20,13 @@ RingStore is a highly available, fault tolerant, eventually consistent storage s
 Basic Code Structure:
 --------------------
 There are two packages present in this repository - 
+
     1. The CLIENT package that creates a pairwise connectivity between all the client nodes and elects a sequencer node. The client code currently assumes that the sequencer node does not send any messages of its own and that its only role is to sequence messages. However, most of the code for it to also send messages is in place and extending this functionality is trivial.
 
     2. The SERVER package that creates the ring structure, simulates failure, recovery, diff calculation and so on. The code creates 5 threads per server to handle the different possible functions of a server node. Server nodes can print the data they store, detach themselves from the ring to simulate failure and rejoin the ring.
 
     RingStore Servers can perform READ, WRITES and UPDATES.
+    
         2.1. READ operations can go randomly to any of the three servers that can contain a key-value pair. This depends on the hash function and replication factor chosen.
 
         2.2. WRITE operations always go to the primary server (represented by H(Ok) in the specification), if present. On receiving a write request, the primary server writes it to its data storage and then relays the write request to the secondary node. The secondary server performs the same action as the primary and subsequently relays that request to the tertiary server. 
