@@ -2,8 +2,6 @@
  * The MessageBroadcaster class handles client-side message generation and
  * dispatch to the sequencer. It captures user input via the terminal and
  * constructs formatted READ/WRITE messages to be sent to the sequencer node.
- * @author Mathew George
- * @author Yukta Shah
  **/
 package Client;
 
@@ -92,7 +90,7 @@ public void run() {
             }
 
             // Sleep briefly to avoid racing with sequencer
-            Thread.sleep(100);
+            Thread.sleep(50);
         }
     } catch (IOException | InterruptedException e) {
         e.printStackTrace();

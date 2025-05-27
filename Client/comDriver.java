@@ -15,9 +15,6 @@ public class comDriver {
         // Loads system properties
         ConnectionContext.readSystemProperties();
         Integer currentNodeId = ConnectionContext.getCurrentNodeID();
-        
-        // Else: this is a client node (Node 1 to 5)
-        System.out.println("This is a Client node (Node " + currentNodeId + "). Launching Total Order Broadcast...");
 
         // Creates the communication context and invokes channel setup
         ConnectionContext connectionContext = new ConnectionContext();

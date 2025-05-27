@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Properties;
 
 /**
- * TEST SERVER. NOT USED
+ * DUMMY SERVER CODE TO TEST THE CLIENT SIDE. NOT USED!
  */
 public class ServerListener {
     public static void main(String[] args) throws IOException {
@@ -30,7 +30,7 @@ public class ServerListener {
 
         while (true) {
             Socket clientSocket = serverSocket.accept();
-            System.out.println("🔗 Connection from: " + clientSocket.getInetAddress());
+            System.out.println("Connection from: " + clientSocket.getInetAddress());
 
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);

@@ -15,16 +15,12 @@ import java.util.concurrent.PriorityBlockingQueue;
  * message flow between clients, the sequencer, and servers.
  * It supports the initialization of queues, launching the sequencer,
  * receiving messages, and broadcasting them to the appropriate targets.
- *
- 
- * Authors: Matthew George , Yukta Shah
  */
 public class MessageBroker {
 
     private HashMap<Integer, Socket> connectionHash;
     protected PriorityBlockingQueue<Message> messageQueue; // Shared message queue
-    private final int MAX_PROCESSES = 5;
-    private final int MAX_PROCESSES_MESSAGES = 100;
+    private final int DEFAULT_MESSAGE_QUEUE_SIZE = 100;
     private ConnectionContext connectionContext;
     private ArrayList<Thread> receiverThreads = new ArrayList<>();
     private Thread broadcasterThread;
@@ -43,7 +39,7 @@ public class MessageBroker {
      */
     public void initialization() {
         // Initialize Message Queue
-        connectionContext.setMessageQueue(new MessageQueue(MAX_PROCESSES * MAX_PROCESSES_MESSAGES));
+        connectionContext.setMessageQueue(new MessageQueue(DEFAULT_MESSAGE_QUEUE_SIZE));
 
         // Initialize Sequence Queue
         connectionContext.setSequencerQueue(new SequencerQueue());

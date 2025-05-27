@@ -8,9 +8,6 @@ package Client;
  *   - SequenceNumber: total order position (assigned by sequencer)
  *   - RetryFactor (RF): retry attempts remaining
  *   - MessageContent: "key:value" for writes or "key" for reads
- *
- * @author Matthew George
- * @author Yukta Shah
  */
 public class Message {
 
@@ -21,7 +18,7 @@ public class Message {
     private MessageType type;
     private int seqNo;
     private int rf;
-    private String msgContent; // e.g., "1:Yukta" or "1"
+    private String msgContent; // e.g., "1:Message" or "1"
     private int senderNodeId;
 
     /**

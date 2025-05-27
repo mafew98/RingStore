@@ -46,8 +46,14 @@ public class RingManager {
             }
         }));
 
-        // Starting threads
-        // Start the connection listener
+        /** 5 Threads are created per server nodes for the following purposes -
+         *      receiving client requests, 
+         *      listen to server predecessors,
+         *      listen to server successors,
+         *      listen for resurructed nodes,
+         *      worker thread that does the storage work.
+         * 
+         */
 
         Thread workerThread = new Thread(new Worker(connectionContext, runningFlag));
         workerThread.start();
@@ -65,7 +71,10 @@ public class RingManager {
     }
 
     /**
-     * Creates server side CLI
+     * Creates server side CLI. The following actions are possible at the server side -
+     * 1. Print - displays all the key value pairs present at a particular node.
+     * 2. Rebel - Forces a server to delete all its links and mark itself as failed. Simulation of node failure.
+     * 3. Resurrect - Reestablishes connectivity with neighbors and rejoins the ring store.
      * 
      * @param connectionContext
      * @param ringMutator
@@ -73,7 +82,6 @@ public class RingManager {
      */
     private static void runServerCLI(ConnectionContext connectionContext, RingMutator ringMutator) throws IOException {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("\n\n\nRingServer CLI");
         System.out.println("========================================");
         System.out.println("Type 'help' for options and 'Ctrl + C' anytime to quit.");
 
@@ -89,7 +97,7 @@ public class RingManager {
                     System.out.println("  help      - Show this help menu");
                     System.out.println("  print     - Display the current contents of the datastore");
                     System.out.println("  rebel     - Force the server to destory its links and stop actions");
-                    System.out.println("  resurruct - Asks for mercy and join the Ring again");
+                    System.out.println("  resurruct - Pleads with the other servers for mercy and joins the Ring again");
                     break;
 
                 case "print":

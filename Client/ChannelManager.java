@@ -47,6 +47,8 @@ public class ChannelManager {
      * This logic creates pairwise channels efficiently. It also orchestrates
      * agreement on the READY state of each node.
      * 
+     * In just the client side, the node numbers are assigned from 6 to 12 to accomadate server details within the same configuration file. To be fixed later.
+     * 
      * @throws IOException
      * @throws NumberFormatException
      */
@@ -54,6 +56,7 @@ public class ChannelManager {
         // Initiate Connection Channels
         startServer();
         if (NodeId >= 6 && NodeId <= 12) {
+            // This code is used only for creating a dummy server since the client package was independently developed. It is not used since the server side code is run on the server nodes.
             acceptServerConnectionOnly();
             return;
         }
@@ -112,7 +115,6 @@ public class ChannelManager {
             if (systemMapping.get(nodeAddress) >= 6 && systemMapping.get(nodeAddress) <= 12) {
                 continue;
             }
-
 
             if (systemMapping.get(nodeAddress) > NodeId) {
                 connectToNode(nodeAddress);

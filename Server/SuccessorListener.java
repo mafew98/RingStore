@@ -20,7 +20,7 @@ public class SuccessorListener implements Runnable {
         try {
             int successorNode = connectionContext.getSuccessor();
             BufferedReader sucReader = connectionContext.getInputReader(successorNode);
-            // 1. wait and read a failure.
+            // Wait and read a failure.
             String rawMessageContent;
             while ((rawMessageContent = sucReader.readLine()) != null) {
                 Message message = new Message(rawMessageContent);
@@ -31,15 +31,16 @@ public class SuccessorListener implements Runnable {
                     oldSocket.close();
                     // Delay for predecessor to restart
                     Thread.sleep(100);
-                    // 3. Attempt to contact new successor
+                    // Attempt to contact new successor
                     connectToNewSuccessor(message);
                     Thread replacement = new Thread(new SuccessorListener(connectionContext, ringMutator));
                     connectionContext.successorListener = replacement;
                     replacement.start();
                     break;
                 } else if ((message.getMessageType()).equals("R")) {
-                    // get diffs and send it back rn
+                    // get diffs and send it back immediately
                     handleReconnectionMessages(message); 
+                    
                 } else if ((message.getMessageType()).equals("D")) {
                     connectionContext.getDataStore().addDiffs(message.getMessageContent());
                 }
@@ -52,6 +53,10 @@ public class SuccessorListener implements Runnable {
         
     }
 
+    /**
+     * Method to connect to a new successsor node incase the previous successor fails.
+     * @param message
+     */
     public void connectToNewSuccessor(Message message) {
         int newSuccessor = message.getMessageOrderNo();
         while (newSuccessor != ConnectionContext.getNodeID()) {
@@ -66,6 +71,11 @@ public class SuccessorListener implements Runnable {
         }
     }
 
+    /**
+     * Method to handle reconnection messages sent from a resurrected node.
+     * @param message
+     * @throws IOException
+     */
     private void handleReconnectionMessages(Message message) throws IOException {
         System.out.println("Sending Diff Messages");
         PrintWriter sucWriter = connectionContext.getOutputWriter(connectionContext.getSuccessor());
