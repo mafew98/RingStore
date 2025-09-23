@@ -80,6 +80,8 @@ Potential Improvements:
 - The sequencer client currently cannot send messages to the servers. Its job is only to sequence. Extension for it to also send messages is trivial since most of the code is present already to do so.
 
 - Implement two phase locking to convert this solution from an eventually consistent one to a causally consistent solution.
+
+- Implement solutions to allow updates during node addition and deletion. 
   
 - System properties files for the server and the client can be unified.
 
