@@ -18,14 +18,12 @@ RingStore is a highly available, fault-tolerant, eventually consistent key-value
 - Clients send writes to the **primary replica**.
 - Writes are forwarded sequentially to secondary and tertiary replicas. This preserves total ordering.
 - If no live replica is reachable, the operation fails with an error.
+![RingStore Architecture](ringstore-architecture.svg)
 
 #### Reads:
 - Clients may read from ***any of the three replicas*** responsible for an object.
 - If a contacted server is unreachable, the client retries with another replica.
 - If all replicas are unavailable, the read fails with an error message.
-
-![RingStore Architecture](ringstore-architecture.svg)
-
 
 ### Failure & Recovery Model
 #### Server Failure
