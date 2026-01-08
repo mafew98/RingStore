@@ -24,7 +24,7 @@ RingStore is a highly available, fault-tolerant, eventually consistent key-value
 - If a contacted server is unreachable, the client retries with another replica.
 - If all replicas are unavailable, the read fails with an error message.
 
-![RingStore Architecture](ringstore-diagram.svg)
+![RingStore Architecture](ringstore-architecture.svg)
 
 
 ### Failure & Recovery Model
