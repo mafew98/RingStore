@@ -4,9 +4,9 @@ RingStore is a highly available, fault-tolerant, eventually consistent key-value
 
 ## Architecture:
 ### Servers
-  - 7 Data Servers (S0 to S6) connected in a logical ring. Server Si connects to S(i+1)modulo 7 and S(i−1) modulo 7.
+  - 7 Data Servers (S0 to S6) connected in a logical ring. Server Si connects to S(i+1) mod 7 and S(i−1) mod 7.
   - Replication factor: 3.
-  - Using consistent hash function **H**, an object Ok is stored on **H(Ok), H(Ok)+1 modulo 7, and H(Ok)+2 modulo 7.** The server H(Ok) acts as the ***primary replica*** for write operations.
+  - Using consistent hash function **H**, an object Ok is stored on **H(Ok), H(Ok)+1 mod 7, and H(Ok)+2 mod 7.** The server H(Ok) acts as the ***primary replica*** for write operations.
   - Since no locking is implemented, the system provides **eventual consistency**.
  
 ### Clients
