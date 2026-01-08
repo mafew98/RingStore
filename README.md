@@ -1,21 +1,48 @@
-Project Description:
--------------------
+# Project Description:
 
-RingStore is a highly available, fault tolerant, eventually consistent storage solution that consists of multiple servers arranged in a ring structure. Following are the specifications of the project-
+RingStore is a highly available, fault-tolerant, eventually consistent key-value storage system implemented in Java. It consists of multiple storage servers arranged in a logical ring topology, supports replication, failure simulation, and recovery, and is designed to explore real-world distributed systems concepts such as replication, ordering, and consistency trade-offs.
 
-Assuming seven data servers, S0, S1, . . . S6 and five clients, C0, C1, . . . , C4. The servers are connected in a cyclic manner, with server Si connected to servers S(i+1)modulo 7 and S(i−1) modulo 7. When a client wishes to perform a read or write, it establishes a communication channel with a server chosen as per the description below. This client- server channel lasts for the duration it takes to complete the read or write operation. All communication channels are FIFO and reliable when they are operational: implemented using sockets. Occasionally, a channel may be disrupted in which case no message can be communicated across that channel. There exists a hash function, H, such that for each object, Ok, H(Ok) yields a value in the range 0 − 6.
+## Architecture:
+### Servers
+  - 7 Data Servers (S0 to S6) connected in a logical ring. Server Si connects to S(i+1)modulo 7 and S(i−1) modulo 7.
+  - Replication factor: 3.
+  - Using consistent hash function **H**, an object Ok is stored on **H(Ok), H(Ok)+1 modulo 7, and H(Ok)+2 modulo 7.** The server H(Ok) acts as the ***primary replica*** for write operations.
+  - Since no locking is implemented, the system provides **eventual consistency**.
+ 
+### Clients
+  - 5 clients (C0 … C4) issuing read and write requests.
+  - One sequencer client orders all requests to totally order all requests.
 
-- Under normal (fault-free) circumstances, when a client, Ci has to insert/update an object, Ok, this operation must be performed at three servers numbered: H(Ok), H(Ok)+1 modulo 7, and H(Ok)+2 modulo 7. Instead of contacting all three replicas directly, the client establishes a channel with server identified by H(Ok) and sends its requested operation to that server. Then, that server, acting on behalf of the client, ensures that the insert/update operation is performed at the three replicas. When server H(Ok) completes the insert/update operation at the appropriate servers, it sends a response to the client at which point the client can terminate the connection with the server.
+### Operations
+#### Writes:
+- Clients send writes to the **primary replica**.
+- Writes are forwarded sequentially to secondary and tertiary replicas. This preserves total ordering.
+- If no live replica is reachable, the operation fails with an error.
 
-- If server H(Ok) is not accessible from the client, the client then tries to access server H(Ok)+1 modulo 7, asking it to perform the update on the two live replicas. If neither of these two replicas are accessible from the client, the client should declare an error.
+#### Reads:
+- Clients may read from ***any of the three replicas*** responsible for an object.
+- If a contacted server is unreachable, the client retries with another replica.
+- If all replicas are unavailable, the read fails with an error message.
 
-- When a client, Cj has to read an object, Ok, it can read the value from any one of the three servers: H(Ok), H(Ok)+1 modulo 7, or H(Ok)+2 modulo 7. If the contacted server is down, the client tries one of the remaining servers. If all three servers that are supposed to host an object are down, the client should display an error message corresponding to the read operation.
-    
-- The system should be able to simulate failure of a server, Si, as follows: Si terminates its communication channels with the two servers on either side of it in the cycle. When those two servers come to know of the failure (indicated by the termination of the communication channel), the one with the lower server id establishes a channel with the other with the higher server id, thus restoring the cycle. Similarly, a failed server can recover and rejoin the cycle by establishing links and sending join messages to the servers that would precede and succeed it in the cycle. Those two servers would then break the link they had between them. 
-    
-- As part of recovery, when a server rejoins the cycle, it communicates with at most two servers before it in the cycle, and at most two servers after it in the cycle to obtain the latest replica of all the objects it is expected to store.
+![RingStore Architecture](ringstore-diagram.svg)
 
-- For the sake of simplicity, it is assumed that at any given time, at most one failure or recovery takes place; and no write operation is in progress during a failure or recovery.
+
+### Failure & Recovery Model
+#### Server Failure
+- On server failure, neighboring servers reconnect to preserve the ring.
+- On recovery, the server rejoins and synchronizes replicas from nearby nodes.
+- **Assumption:**
+    - At most one failure or recovery occurs at a time.
+    - No write operation is in progress during failure or recovery.
+
+#### Server Recovery
+- A recovering server Sr contacts its predecessor (Sq) and successor (Ss) in the ring to reconnect.
+- On reestablishing connection with Sr, channels between **Sq** and **Ss** are closed.
+- During recovery, the server Si synchronizes data by communicating with:
+    - Up to two predecessors, S(i+1)modulo 7 and S(i+2)modulo 7
+    - Up to two successors, S(i-1)modulo 7 and S(i-2)modulo 7
+- This ensures the server retrieves the latest replicas it is responsible for storing.
+
 
 Basic Code Structure:
 --------------------
